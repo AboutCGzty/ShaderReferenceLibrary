@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>all-engine-params.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2014 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Engine parameters examples</h1>
+<p><br/></p>
+<h2>Texture parameters</h2>
+<p>Substance 3D Painter uses a Sparse Virtual Texture (SVT) system to display textures in the viewport.</p>
+<p>For more information about this system, go to the <a href="https://docs.substance3d.com/documentation/spdoc/sparse-virtual-textures-172823866.html">online documentation</a>.</p>
+<p>This system has repercussions on how to write shader code. We are providing helpers to simplify its use with the <code>SamplerSparse</code> structure and
+texture lookup functions (see  <a href="lib-sparse.html">lib-sparse.glsl</a>).</p>
+<p>Basic usage:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">// Defines the SamplerSparse structure</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sparse</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param auto TEXTURE_TAG</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">uniform_tex</span><span class="p">;</span><span class="w">   </span><span class="c1">// Texture sampler and its information</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Texture parameters allow to use 'or' operator to define a fallback:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto TEXTURE_TAG_1 or TEXTURE_TAG_2</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">uniform_tex</span><span class="p">;</span><span class="w"> </span><span class="c1">// if TEXTURE_TAG_1 exists then TEXTURE_TAG_1 else TEXTURE_TAG_2</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Where <code>TEXTURE_TAG</code> is one of the described tags below.</p>
+<h3>Document's channels tags</h3>
+<p>All these textures are <strong>premultiplied</strong> and <strong>dilated</strong> to avoid seams problems.</p>
+<p><strong>Texture set channels</strong></p>
+<p><code>channel_ambientocclusion</code>
+<code>channel_anisotropyangle</code>
+<code>channel_anisotropylevel</code>
+<code>channel_basecolor</code>
+<code>channel_blendingmask</code>
+<code>channel_diffuse</code>
+<code>channel_displacement</code>
+<code>channel_emissive</code>
+<code>channel_glossiness</code>
+<code>channel_height</code>
+<code>channel_ior</code>
+<code>channel_metallic</code>
+<code>channel_normal</code>
+<code>channel_opacity</code>
+<code>channel_reflection</code>
+<code>channel_roughness</code>
+<code>channel_scattering</code>
+<code>channel_specular</code>
+<code>channel_specularlevel</code>
+<code>channel_transmissive</code></p>
+<p><strong>User channels</strong></p>
+<p><code>channel_user0</code>
+<code>channel_user1</code>
+<code>channel_user2</code>
+<code>channel_user3</code>
+<code>channel_user4</code>
+<code>channel_user5</code>
+<code>channel_user6</code>
+<code>channel_user7</code></p>
+<h3>Mesh maps</h3>
+<p><code>texture_ambientocclusion</code> : Ambient Occlusion map<br/>
+<code>texture_curvature</code> : Curvature map<br/>
+<code>texture_id</code> : ID map<br/>
+<code>texture_normal</code> : Tangent space normal map<br/>
+<code>texture_normal_ws</code> : World space normal map<br/>
+<code>texture_position</code> : World space position map<br/>
+<code>texture_thickness</code> : Thickness map<br/>
+<code>texture_height</code> : Height map<br/>
+<code>texture_bent_normals</code> : Bent normals map<br/>
+<code>texture_opacity</code> : Opacity map<br/></p>
+<h2>Additional texture parameters</h2>
+<p>Basic usage:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto TEXTURE_TAG</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">uniform_tex</span><span class="p">;</span><span class="w">   </span><span class="c1">// The texture itself</span>
+
+<span class="c1">//: param auto TEXTURE_TAG_size</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">uniform_tex_size</span><span class="p">;</span><span class="w">   </span><span class="c1">// The size of the texture (width, height, 1/width, 1/height)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Texture parameters allow to use 'or' operator to define a fallback:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto TEXTURE_TAG_1 or TEXTURE_TAG_2</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">uniform_tex</span><span class="p">;</span><span class="w"> </span><span class="c1">// if TEXTURE_TAG_1 exists then TEXTURE_TAG_1 else TEXTURE_TAG_2</span>
+
+<span class="c1">//: param auto TEX_TAG_1_size or TEX_TAG_2_size</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">uniform_tex_size</span><span class="p">;</span><span class="w"> </span><span class="c1">// if TEX_TAG_1 exists then TEX_TAG_1_size else TEX_TAG_2_size</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Where <code>TEXTURE_TAG</code> is one of the described tags below.</p>
+<p><code>texture_blue_noise</code> : A blue noise texture<br/>
+<code>texture_environment</code> : Environment map, <strong>mip-mapped</strong>, use  <a href="lib-env.html">lib-env.glsl</a> to use this one<br/></p>
+<h2>Other parameters</h2>
+<p><code>aspect_ratio</code>: a <code>float</code> containing the viewport <code>width / height</code> ratio<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto aspect_ratio</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">uniform_aspect_ratio</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p><code>camera_view_matrix</code>: a <code>mat4</code> representing the transformation from world space to camera space<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto camera_view_matrix</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">uniform_camera_view_matrix</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p><code>camera_view_matrix_it</code>: inverse transpose version of <code>camera_view_matrix</code><br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto camera_view_matrix_it</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">uniform_camera_view_matrix_it</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p><code>camera_vp_matrix_inverse</code>: inverse of <code>projection * camera_view_matrix</code> matrix <br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto camera_vp_matrix_inverse</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">uniform_camera_vp_matrix_inverse</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p><code>environment_exposure</code>: a <code>float</code> representing the envmap's exposure<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto environment_exposure</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">uniform_environment_exposure</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p><code>environment_max_lod</code>: a <code>float</code> representing the envmap's depth of mip-map pyramid<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto environment_max_lod</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">uniform_max_lod</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p><code>environment_matrix</code>: a <code>mat3</code> representing the transformation from world space vector to environment map direction<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto environment_matrix</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat3</span><span class="w"> </span><span class="n">uniform_environment_matrix</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <p><code>facing</code>: an <code>integer</code> indicating rendered faces (-1: back faces, 0: undefined, 1: front faces)<br/>
+value of 0 means you can safely rely on glsl built-in variable <code>gl_FrontFacing</code><br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto facing</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">uniform_facing</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p><code>fovy</code>: a <code>float</code> representing the camera field of view along Y axis<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto fovy</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">uniform_fovy</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p><code>is_2d_view</code>: a <code>bool</code> indicating whether the rendering is performed for 2D view or not<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto is_2d_view</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">uniform_2d_view</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <p><code>is_perspective_projection</code>: a <code>bool</code> indicating whether the projection is perspective or orthographic<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto is_perspective_projection</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">uniform_perspective_projection</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-16'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-16'>#</a>
+      </div>
+      <p><code>main_light</code>: a <code>vec4</code> indicating the position of the main light in the environment<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto main_light</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">uniform_main_light</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-17'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-17'>#</a>
+      </div>
+      <p><code>mvp_matrix</code>: a <code>mat4</code> representing the model view projection matrix<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto mvp_matrix</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">uniform_mvp_matrix</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-18'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-18'>#</a>
+      </div>
+      <p><code>scene_original_radius</code>: a <code>float</code> representing the radius of the scene's bounding sphere before its normalization<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto scene_original_radius</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">uniform_scene_original_radius</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-19'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-19'>#</a>
+      </div>
+      <p><code>screen_size</code>: a <code>vec4</code> containing screen size data <code>(width, height, 1/width, 1/height)</code><br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto screen_size</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">uniform_screen_size</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-20'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-20'>#</a>
+      </div>
+      <p><code>world_camera_direction</code>: a <code>vec3</code> representing the world camera orientation<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto world_camera_direction</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">uniform_world_camera_direction</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-21'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-21'>#</a>
+      </div>
+      <p><code>world_eye_position</code>: a <code>vec3</code> representing the world eye position<br/></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto world_eye_position</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">uniform_world_eye_position</span><span class="p">;</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

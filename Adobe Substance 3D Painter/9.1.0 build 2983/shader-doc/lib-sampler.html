@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-sampler.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2015 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-sampler.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>getAO</code>
+<code>getShadowFactor</code>
+<code>getGlossiness</code>
+<code>getRoughness</code>
+<code>getMetallic</code>
+<code>getAnisotropyLevel</code>
+<code>getAnisotropyAngle</code>
+<code>getOpacity</code>
+<code>getHeight</code>
+<code>getDisplacement</code>
+<code>getSpecularLevel</code>
+<code>getBaseColor</code>
+<code>getDiffuse</code>
+<code>getSpecularColor</code>
+<code>getTranslucency</code>
+<code>getAbsorptionColor</code>
+<code>getScatteringPerComponent</code>
+<code>getScatteringColor</code>
+<code>getSpecularEdgeColor</code>
+<code>getSpecularTint</code>
+<code>getSheenOpacity</code>
+<code>getSheenColor</code>
+<code>getSheenRoughness</code>
+<code>getCoatOpacity</code>
+<code>getCoatColor</code>
+<code>getCoatRoughness</code>
+<code>getCoatSpecularLevel</code>
+<code>generateAnisotropicRoughness</code>
+<code>generateDiffuseColor</code>
+<code>generateSpecularColor</code></p>
+<p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">defines</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sparse</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Default background colors when there is no data in channel (alpha is 0)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w">  </span><span class="n">DEFAULT_BASE_COLOR</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_ROUGHNESS</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="mf">0.3</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_METALLIC</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_ANISOTROPY_LEVEL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_ANISOTROPY_ANGLE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_OPACITY</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_AO</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_SPECULAR_LEVEL</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_HEIGHT</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_DISPLACEMENT</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_TRANSMISSIVE</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_TRANSLUCENCY</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w">  </span><span class="n">DEFAULT_ABSORPTION_COLOR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_SCATTERING</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w">  </span><span class="n">DEFAULT_SCATTERINGCOLOR</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w">  </span><span class="n">DEFAULT_SPECULAR_TINT</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w">  </span><span class="n">DEFAULT_SPEC_EDGE_COLOR</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_SHEEN_OPACITY</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w">  </span><span class="n">DEFAULT_SHEEN_COLOR</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_SHEEN_ROUGHNESS</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_COAT_OPACITY</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w">  </span><span class="n">DEFAULT_COAT_COLOR</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_COAT_ROUGHNESS</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">DEFAULT_COAT_SPEC_LEVEL</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>AO map.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto ao_blending_mode</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">ao_blending_mode</span><span class="p">;</span>
+<span class="c1">//: param auto texture_ao</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">base_ao_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_ao</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">ao_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>A value used to tweak the Ambient Occlusion intensity.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 0.75,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;AO Intensity&quot;,</span>
+<span class="c1">//:   &quot;min&quot;: 0.00,</span>
+<span class="c1">//:   &quot;max&quot;: 1.0,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Base Surface&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ambience occlusion (AO) represents shadows from cavities and creases preventing light from hitting the surface. Uses the baked mesh map &lt;b&gt;Ambient occlusion&lt;/b&gt; and/or the channel &lt;b&gt;Ambient occlusion&lt;/b&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">ao_intensity</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Shadowmask.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto shadow_mask_enable</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">sm_enable</span><span class="p">;</span>
+<span class="c1">//: param auto shadow_mask_opacity</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sm_opacity</span><span class="p">;</span>
+<span class="c1">//: param auto shadow_mask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">sm_tex</span><span class="p">;</span>
+<span class="c1">//: param auto screen_size</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">screen_size</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Return sampled glossiness or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getGlossiness</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">DEFAULT_ROUGHNESS</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getGlossiness</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getGlossiness</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Return sampled roughness or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getRoughness</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_ROUGHNESS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getRoughness</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getRoughness</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Return sampled metallic or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getMetallic</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_METALLIC</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getMetallic</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getMetallic</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Return sampled anisotropy level or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getAnisotropyLevel</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_ANISOTROPY_LEVEL</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getAnisotropyLevel</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getAnisotropyLevel</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>Return sampled anisotropy angle or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">M_2PI</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_ANISOTROPY_ANGLE</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// Manual trilinear filtering</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">textureSparseQueryLod</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">uvtile_lod_bias</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">level0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="n">level</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">level1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">level0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kt">ivec2</span><span class="w"> </span><span class="n">texSize0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">xy</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">level0</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">ivec2</span><span class="w"> </span><span class="n">texSize1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texSize0</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">ivec2</span><span class="w"> </span><span class="n">itex_coord0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">texSize0</span><span class="p">));</span>
+<span class="w">  </span><span class="kt">ivec2</span><span class="w"> </span><span class="n">itex_coord1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">texSize1</span><span class="p">));</span>
+
+<span class="w">  </span><span class="c1">// Assuming tex sizes are pow of 2, we can do the fast modulo</span>
+<span class="w">  </span><span class="kt">ivec2</span><span class="w"> </span><span class="n">texSizeMask0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texSize0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">ivec2</span><span class="w"> </span><span class="n">texSizeMask1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texSize1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Fetch the 8 samples needed</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a000</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">texelFetch</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w">  </span><span class="n">itex_coord0</span><span class="w">                </span><span class="o">&amp;</span><span class="w"> </span><span class="n">texSizeMask0</span><span class="p">,</span><span class="w"> </span><span class="n">level0</span><span class="p">));</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a001</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">texelFetch</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">itex_coord0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mo">0</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">texSizeMask0</span><span class="p">,</span><span class="w"> </span><span class="n">level0</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a010</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">texelFetch</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">itex_coord0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="mo">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">texSizeMask0</span><span class="p">,</span><span class="w"> </span><span class="n">level0</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a011</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">texelFetch</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">itex_coord0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">texSizeMask0</span><span class="p">,</span><span class="w"> </span><span class="n">level0</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a100</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">texelFetch</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w">  </span><span class="n">itex_coord1</span><span class="w">                </span><span class="o">&amp;</span><span class="w"> </span><span class="n">texSizeMask1</span><span class="p">,</span><span class="w"> </span><span class="n">level1</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a101</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">texelFetch</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">itex_coord1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mo">0</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">texSizeMask1</span><span class="p">,</span><span class="w"> </span><span class="n">level1</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a110</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">texelFetch</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">itex_coord1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="mo">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">texSizeMask1</span><span class="p">,</span><span class="w"> </span><span class="n">level1</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a111</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">texelFetch</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">itex_coord1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">ivec2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">texSizeMask1</span><span class="p">,</span><span class="w"> </span><span class="n">level1</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Detect if the angle warps inside the filtering footprint, and fix it</span>
+<span class="w">  </span><span class="n">a001</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">a001</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">M_PI</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">sign</span><span class="p">(</span><span class="n">a001</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">-</span><span class="n">M_2PI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a000</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="n">a010</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">a010</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">M_PI</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">sign</span><span class="p">(</span><span class="n">a010</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">-</span><span class="n">M_2PI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a000</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="n">a011</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">a011</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">M_PI</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">sign</span><span class="p">(</span><span class="n">a011</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">-</span><span class="n">M_2PI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a000</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="n">a100</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">a100</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">M_PI</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">sign</span><span class="p">(</span><span class="n">a100</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">-</span><span class="n">M_2PI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a000</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="n">a101</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">a101</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">M_PI</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">sign</span><span class="p">(</span><span class="n">a101</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">-</span><span class="n">M_2PI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a000</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="n">a110</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">a110</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">M_PI</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">sign</span><span class="p">(</span><span class="n">a110</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">-</span><span class="n">M_2PI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a000</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+<span class="w">  </span><span class="n">a111</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">a111</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">M_PI</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">sign</span><span class="p">(</span><span class="n">a111</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="o">-</span><span class="n">M_2PI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a000</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">a000</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Trilinear blending of the samples</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">t0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">texSize0</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">itex_coord0</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">t1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">texSize1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">itex_coord1</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span>
+<span class="w">    </span><span class="n">mix</span><span class="p">(</span><span class="n">mix</span><span class="p">(</span><span class="n">a000</span><span class="p">,</span><span class="w"> </span><span class="n">a001</span><span class="p">,</span><span class="w"> </span><span class="n">t0</span><span class="p">.</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">a010</span><span class="p">,</span><span class="w"> </span><span class="n">a011</span><span class="p">,</span><span class="w"> </span><span class="n">t0</span><span class="p">.</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">t0</span><span class="p">.</span><span class="n">y</span><span class="p">),</span>
+<span class="w">    </span><span class="n">mix</span><span class="p">(</span><span class="n">mix</span><span class="p">(</span><span class="n">a100</span><span class="p">,</span><span class="w"> </span><span class="n">a101</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">.</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">a110</span><span class="p">,</span><span class="w"> </span><span class="n">a111</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">.</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">t1</span><span class="p">.</span><span class="n">y</span><span class="p">),</span>
+<span class="w">    </span><span class="n">level</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">level0</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p>Return sampled opacity or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getOpacity</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_OPACITY</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getOpacity</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getOpacity</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <p>Return sampled height or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getHeight</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_HEIGHT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getHeight</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getHeight</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p>Return sampled displacement or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getDisplacement</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_DISPLACEMENT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getDisplacement</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getDisplacement</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p>Return ambient occlusion</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_premult</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_full_strength</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">ao_lookup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">base_ao_tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">).</span><span class="n">ra</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ao</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ao_lookup</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_AO</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ao_lookup</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ao_tex</span><span class="p">.</span><span class="n">is_set</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ao_lookup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">ao_tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">).</span><span class="n">rg</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">is_premult</span><span class="p">)</span><span class="w"> </span><span class="n">ao_lookup</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">ao_lookup</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">channel_ao</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ao_lookup</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_AO</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ao_lookup</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ao_blending_mode</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">BlendingMode_Replace</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">ao</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">channel_ao</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ao_blending_mode</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">BlendingMode_Multiply</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">ao</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">channel_ao</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="c1">// skip mix if full strength</span>
+<span class="w">  </span><span class="c1">// Otherwise modulate AO value by AO_intensity</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">is_full_strength</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">ao</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">ao</span><span class="p">,</span><span class="w"> </span><span class="n">ao_intensity</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_premult</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="n">is_premult</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <p>Return specular level</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getSpecularLevel</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_SPECULAR_LEVEL</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getSpecularLevel</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getSpecularLevel</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-16'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-16'>#</a>
+      </div>
+      <p>Fetch the shadowing factor (screen-space)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getShadowFactor</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">shadowFactor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sm_enable</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">vec2</span><span class="w"> </span><span class="n">screenCoord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nb">gl_FragCoord</span><span class="p">.</span><span class="n">xy</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">screen_size</span><span class="p">.</span><span class="n">z</span><span class="p">,</span><span class="w"> </span><span class="n">screen_size</span><span class="p">.</span><span class="n">w</span><span class="p">));</span>
+<span class="w">    </span><span class="kt">vec2</span><span class="w"> </span><span class="n">shadowSample</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">sm_tex</span><span class="p">,</span><span class="w"> </span><span class="n">screenCoord</span><span class="p">).</span><span class="n">xy</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// shadowSample.x / shadowSample.y is the normalized shadow factor.</span>
+<span class="w">    </span><span class="c1">// shadowSample.x may already be normalized, shadowSample.y contains 0.0 in this case.</span>
+<span class="w">    </span><span class="n">shadowFactor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shadowSample</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">shadowSample</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">shadowSample</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">shadowSample</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">shadowFactor</span><span class="p">,</span><span class="w"> </span><span class="n">sm_opacity</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-17'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-17'>#</a>
+      </div>
+      <p>Return sampled base color or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_BASE_COLOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-18'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-18'>#</a>
+      </div>
+      <p>Return sampled diffuse color or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getDiffuse</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">sampledValue</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getDiffuse</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getDiffuse</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-19'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-19'>#</a>
+      </div>
+      <p>Return sampled specular color or a default value
+Specular/Glossiness PBR workflow only</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getSpecularColor</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_BASE_COLOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">defaultF0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.04</span><span class="p">),</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="n">DEFAULT_METALLIC</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="n">defaultF0</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getSpecularColor</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getSpecularColor</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-20'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-20'>#</a>
+      </div>
+      <p>Generate anisotropic roughness from roughness and anisotropy level</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec2</span><span class="w"> </span><span class="n">generateAnisotropicRoughness</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">anisoLevel</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">roughness</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">anisoLevel</span><span class="p">)));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-21'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-21'>#</a>
+      </div>
+      <p>Generate anisotropic roughness from roughness and anisotropy level,
+for the ASM model.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec2</span><span class="w"> </span><span class="n">generateAnisotropicRoughnessASM</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">anisoLevel</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">alphaU</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">min</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="o">*</span><span class="n">roughness</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="n">anisoLevel</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="mf">4.0</span><span class="p">));</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">alphaU</span><span class="p">),</span><span class="w"> </span><span class="n">roughness</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-22'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-22'>#</a>
+      </div>
+      <p>Generate diffuse color from base color and metallic factor</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">generateDiffuseColor</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">baseColor</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-23'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-23'>#</a>
+      </div>
+      <p>Generate specular color from dielectric specular level, base color and metallic factor</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">generateSpecularColor</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">specularLevel</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.08</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">specularLevel</span><span class="p">),</span><span class="w"> </span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-24'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-24'>#</a>
+      </div>
+      <p>Generate specular color from base color and metallic factor, using default
+specular level (0.04) for dielectrics</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">generateSpecularColor</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.04</span><span class="p">),</span><span class="w"> </span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-25'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-25'>#</a>
+      </div>
+      <p>Return sampled transmissive value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getTranslucency</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_TRANSLUCENCY</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getTranslucency</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getTranslucency</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getAbsorptionColor</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_ABSORPTION_COLOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getAbsorptionColor</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getAbsorptionColor</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-26'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-26'>#</a>
+      </div>
+      <p>Return sampled scattering value per component or a default value
+Handle grayscale (same radius for R, G &amp; B) or color texture</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getScatteringPerComponent</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">);</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">smp</span><span class="p">.</span><span class="n">is_color</span><span class="w"> </span><span class="o">?</span>
+<span class="w">		</span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">DEFAULT_SCATTERING</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">:</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="p">(</span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_SCATTERING</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-27'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-27'>#</a>
+      </div>
+      <p>Return sampled scatter color or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getScatteringColor</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_SCATTERINGCOLOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getScatteringColor</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getScatteringColor</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-28'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-28'>#</a>
+      </div>
+      <p>Return sampled specular tint value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getSpecularTint</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_SPECULAR_TINT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getSpecularTint</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getSpecularTint</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getSpecularEdgeColor</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_SPEC_EDGE_COLOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getSpecularEdgeColor</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getSpecularEdgeColor</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-29'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-29'>#</a>
+      </div>
+      <p>Return sampled sheen opacity (sheen weight) value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getSheenOpacity</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_SHEEN_OPACITY</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getSheenOpacity</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getSheenOpacity</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-30'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-30'>#</a>
+      </div>
+      <p>Return sampled sheen color value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getSheenColor</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_SHEEN_COLOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getSheenColor</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getSheenColor</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-31'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-31'>#</a>
+      </div>
+      <p>Return sampled sheen roughness value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getSheenRoughness</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_SHEEN_ROUGHNESS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getSheenRoughness</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getSheenRoughness</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-32'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-32'>#</a>
+      </div>
+      <p>Return sampled coat opacity (coat weight) value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getCoatOpacity</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_COAT_OPACITY</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getCoatOpacity</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getCoatOpacity</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-33'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-33'>#</a>
+      </div>
+      <p>Return sampled coat color value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getCoatColor</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_COAT_COLOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getCoatColor</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getCoatColor</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-34'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-34'>#</a>
+      </div>
+      <p>Return sampled coat roughness value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getCoatRoughness</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_COAT_ROUGHNESS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getCoatRoughness</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getCoatRoughness</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-35'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-35'>#</a>
+      </div>
+      <p>Return sampled coat specular level value or a default value</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">getCoatSpecularLevel</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">DEFAULT_COAT_SPEC_LEVEL</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sampledValue</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getCoatSpecularLevel</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">getCoatSpecularLevel</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

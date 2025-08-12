@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-vectors.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2016 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-vectors.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>computeLocalFrame</code>
+<code>getEyeVec</code>
+<code>tangentSpaceToWorldSpace</code>
+<code>worldSpaceToTangentSpace</code></p>
+<p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">normal</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Which view is shaded.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto is_2d_view</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is2DView</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>What kind of projection is used.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto is_perspective_projection</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_perspective</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Eye position in world space.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto world_eye_position</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">camera_pos</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Camera orientation in world space.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto world_camera_direction</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">camera_dir</span><span class="p">;</span>
+
+<span class="c1">//: param auto facing</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">facing</span><span class="p">;</span>
+
+<span class="kt">bool</span><span class="w"> </span><span class="n">isBackFace</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">facing</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">(</span><span class="n">facing</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mo">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="nb">gl_FrontFacing</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Compute the world space eye vector</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getEyeVec</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">position</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">is_perspective</span><span class="w"> </span><span class="o">?</span>
+<span class="w">    </span><span class="n">normalize</span><span class="p">(</span><span class="n">camera_pos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">position</span><span class="p">)</span><span class="w"> </span><span class="o">:</span>
+<span class="w">    </span><span class="o">-</span><span class="n">camera_dir</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Convert a vector from tangent space to world space</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">tangentSpaceToWorldSpace</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">vecTS</span><span class="p">,</span><span class="w"> </span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">    </span><span class="n">vecTS</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">vecTS</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">vecTS</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Convert a vector from world space to tangent space</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">worldSpaceToTangentSpace</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">vecWS</span><span class="p">,</span><span class="w"> </span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Assume the transformation is orthogonal</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">vecWS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">mat3</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Local frame of vertex in world space</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">struct</span><span class="w"> </span><span class="n">LocalVectors</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">vertexNormal</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">eye</span><span class="p">,</span><span class="w"> </span><span class="n">bent</span><span class="p">;</span>
+<span class="p">};</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>Compute local frame from custom world space normal and anisotropy angle</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">LocalVectors</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">anisoAngle</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="p">;</span>
+<span class="w">  </span><span class="n">vectors</span><span class="p">.</span><span class="n">vertexNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">;</span>
+<span class="w">  </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normal</span><span class="p">;</span>
+<span class="w">  </span><span class="n">vectors</span><span class="p">.</span><span class="n">bent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Flip the normals for back facing polygons</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isBackFace</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">vectors</span><span class="p">.</span><span class="n">vertexNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">vectors</span><span class="p">.</span><span class="n">vertexNormal</span><span class="p">;</span>
+<span class="w">    </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">is2DView</span><span class="w"> </span><span class="o">?</span>
+<span class="w">    </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="c1">// In 2D view, put view vector along the normal</span>
+<span class="w">    </span><span class="n">getEyeVec</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">position</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Trick to remove black artifacts</span>
+<span class="w">  </span><span class="c1">// Backface ? place the eye at the opposite - removes black zones</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reflect</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// Create a local frame for BRDF work</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">tangent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span>
+<span class="w">    </span><span class="o">-</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">)</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bitangent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span>
+<span class="w">    </span><span class="o">-</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">)</span>
+<span class="w">    </span><span class="o">-</span><span class="w"> </span><span class="n">tangent</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">tangent</span><span class="p">)</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">cosAngle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cos</span><span class="p">(</span><span class="n">anisoAngle</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">sinAngle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sin</span><span class="p">(</span><span class="n">anisoAngle</span><span class="p">);</span>
+<span class="w">  </span><span class="n">vectors</span><span class="p">.</span><span class="n">tangent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cosAngle</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">tangent</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sinAngle</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">bitangent</span><span class="p">;</span>
+<span class="w">  </span><span class="n">vectors</span><span class="p">.</span><span class="n">bitangent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cosAngle</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">bitangent</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">sinAngle</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">tangent</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">vectors</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p>Compute local frame from mesh and document height and normals</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">LocalVectors</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Get world space normal</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeWSNormal</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

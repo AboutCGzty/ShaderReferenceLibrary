@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>asm-metal-rough.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2020 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Adobe Standard Material Definition (ASM) shader</h1>
+<p>Import from libraries.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pbr</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pbr</span><span class="o">-</span><span class="n">aniso</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Base Surface&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable anisotropy&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;anisotropy&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows reflections to stretch in one direction along the surface.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: The following channels need to be present for this parameter to have an effect: &lt;b&gt;Anisotropy angle&lt;/b&gt; and &lt;b&gt;Anisotropy level&lt;/b&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">anisotropyEnabled</span><span class="p">;</span>
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Base Surface&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Index of refraction&quot;,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 40.0,</span>
+<span class="c1">//:   &quot;default&quot;: 1.5,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;specular_ior&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The amount light bends as it passes through the object. Also affects the specular reflection intensity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">specularIoR</span><span class="p">;</span>
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Base Surface&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable edge color&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;specular_edge_color&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows specifying the color of light reflections. Affects glancing angles for metallic materials.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: The following channel needs to be present for this parameter to have an effect: &lt;b&gt;Specular edge color&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">specularEdgeColorEnabled</span><span class="p">;</span>
+
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sheen</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Double sided&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When enabled, the surface is visible on both sides, i.e. back-face culling is disabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">doubleSided</span><span class="p">;</span>
+
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pom</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">bent</span><span class="o">-</span><span class="n">normal</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable translucency&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;translucency&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows for refractive transmission of light through the surface.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: The following channel needs to be present for this parameter to have an effect: &lt;b&gt;Translucency&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;enable&quot;: &quot;!input.sssEnabled&quot;,</span>
+<span class="c1">//:   &quot;description_disabled&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Disable the &lt;b&gt;Subsurface Scattering&lt;/b&gt; to use &lt;b&gt;Translucency&lt;/b&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">translucencyEnabled</span><span class="p">;</span>
+
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sss</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable absorption&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;absorption_color&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filters the light that passes through the volume by absorbing certain colors. Affects both translucency and subsurface scattering.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: The following channel needs to be present for this parameter to have an effect: &lt;b&gt;Absorption color&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.translucencyEnabled || input.sssEnabled&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">absorptionEnabled</span><span class="p">;</span>
+
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">alpha</span><span class="o">-</span><span class="n">test</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry/Opacity&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable alpha blending&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;opacity&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Uses the opacity texture to progressively blend the transparent surface over the background.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: The following channel needs to be present for this parameter to have an effect: &lt;b&gt;Opacity&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;enable&quot;: &quot;!input.sssEnabled&quot;,</span>
+<span class="c1">//:   &quot;description_disabled&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Disable the &lt;b&gt;Subsurface Scattering&lt;/b&gt; to use &lt;b&gt;Alpha blending&lt;/b&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">alphaBlendEnabled</span><span class="p">;</span>
+
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">coat</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">utils</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Declare the iray mdl material to use with this shader.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: metadata {</span>
+<span class="c1">//:   &quot;mdl&quot;:&quot;mdl::alg::materials::painter::standard&quot;</span>
+<span class="c1">//: }</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Disable culling if double sided option is enabled</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: state cull_face off {&quot;enable&quot;:&quot;input.doubleSided&quot;}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Enable 'over' alpha blending if opacity alpha blend</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: state blend over {&quot;enable&quot;:&quot;input.alphaBlendEnabled &amp;&amp; !input.sssEnabled &amp;&amp; !input.translucencyEnabled&quot;}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Enable 'premultiplied over' alpha blending if translucency</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: state blend over_premult {&quot;enable&quot;:&quot;input.translucencyEnabled &amp;&amp; !input.absorptionEnabled &amp;&amp; !input.sssEnabled&quot;}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Enable 'add multiply' alpha blending if absorption is required</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: state blend add_multiply {&quot;enable&quot;:&quot;input.translucencyEnabled &amp;&amp; input.absorptionEnabled &amp;&amp; !input.sssEnabled&quot;}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Channels needed for metal/rough workflow are bound here.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">basecolor_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">roughness_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">metallic_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_anisotropylevel</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">anisotropylevel_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_anisotropyangle</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">anisotropyangle_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_specularlevel</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">specularlevel_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_specularedgecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">specularedgecolor_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_absorptioncolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">absorptioncolor_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Shader entry point.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="c1">// Apply parallax occlusion mapping if possible</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">viewTS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldSpaceToTangentSpace</span><span class="p">(</span><span class="n">getEyeVec</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">position</span><span class="p">),</span><span class="w"> </span><span class="n">inputs</span><span class="p">);</span>
+<span class="w">	</span><span class="n">applyParallaxOffset</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="n">viewTS</span><span class="p">);</span>
+
+<span class="w">	</span><span class="c1">// Fetch material parameters, and conversion to the specular/roughness model</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">baseRoughness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getRoughness</span><span class="p">(</span><span class="n">roughness_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">anisotropyLevel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">anisotropyAngle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">anisotropyEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="n">anisotropyLevel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyLevel</span><span class="p">(</span><span class="n">anisotropylevel_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">		</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">anisotropyLevel</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">anisotropyAngle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAnisotropyAngle</span><span class="p">(</span><span class="n">anisotropyangle_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+<span class="w">	</span><span class="p">}</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">basecolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metallic_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateDiffuseColor</span><span class="p">(</span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">specularLevel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSpecularLevel</span><span class="p">(</span><span class="n">specularlevel_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor_metal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baseColor</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">dielectricF0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iorToSpecularLevel</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">specularIoR</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">coatOpacity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coatEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="n">coatOpacity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getCoatOpacity</span><span class="p">(</span><span class="n">coatOpacity_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">		</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coatOpacity</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="kt">float</span><span class="w"> </span><span class="n">underCoatF0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iorToSpecularLevel</span><span class="p">(</span><span class="n">coatIoR</span><span class="p">,</span><span class="w"> </span><span class="n">specularIoR</span><span class="p">);</span>
+<span class="w">			</span><span class="n">dielectricF0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">dielectricF0</span><span class="p">,</span><span class="w"> </span><span class="n">underCoatF0</span><span class="p">,</span><span class="w"> </span><span class="n">coatOpacity</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor_dielectric</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">dielectricF0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">specularLevel</span><span class="p">);</span>
+
+<span class="w">	</span><span class="c1">// Get detail (ambient occlusion) and global (shadow) occlusion factors</span>
+<span class="w">	</span><span class="c1">// separately in order to blend the bent normals properly</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">shadowFactor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getShadowFactor</span><span class="p">();</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">use_bent_normal</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">specularOcclusionCorrection</span><span class="p">(</span>
+<span class="w">		</span><span class="n">use_bent_normal</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">shadowFactor</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shadowFactor</span><span class="p">,</span>
+<span class="w">		</span><span class="n">metallic</span><span class="p">,</span>
+<span class="w">		</span><span class="n">baseRoughness</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeWSNormal</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span>
+<span class="w">		</span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">	</span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">anisotropyAngle</span><span class="p">);</span>
+<span class="w">	</span><span class="n">computeBentNormal</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="n">inputs</span><span class="p">);</span>
+
+<span class="w">	</span><span class="c1">// Diffuse lobe:</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffuseShading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shadowFactor</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">envIrradiance</span><span class="p">(</span><span class="n">getDiffuseBentNormal</span><span class="p">(</span><span class="n">vectors</span><span class="p">));</span>
+
+<span class="w">	</span><span class="c1">// Specular lobes:</span>
+<span class="w">	</span><span class="c1">// The specs can be interpreted as interpolating between two lobes.</span>
+<span class="w">	</span><span class="c1">// However, due to the prohibitive cost for real-time, we interpolate</span>
+<span class="w">	</span><span class="c1">// between two specular colors and use it for a single specular lobe.</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">specColor_dielectric</span><span class="p">,</span><span class="w"> </span><span class="n">specColor_metal</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specSecondaryColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">specularEdgeColorEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="n">specSecondaryColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSpecularEdgeColor</span><span class="p">(</span><span class="n">specularedgecolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specEdgeColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="n">specSecondaryColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColoring</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="n">specSecondaryColor</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specReflection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">anisotropyEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="kt">vec2</span><span class="w"> </span><span class="n">roughnessAniso</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateAnisotropicRoughnessASM</span><span class="p">(</span><span class="n">baseRoughness</span><span class="p">,</span><span class="w"> </span><span class="n">anisotropyLevel</span><span class="p">);</span>
+<span class="w">		</span><span class="n">specReflection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pbrComputeSpecularAnisotropic</span><span class="p">(</span>
+<span class="w">			</span><span class="n">vectors</span><span class="p">,</span>
+<span class="w">			</span><span class="n">specColor</span><span class="p">,</span>
+<span class="w">			</span><span class="n">specEdgeColor</span><span class="p">,</span>
+<span class="w">			</span><span class="n">roughnessAniso</span><span class="p">,</span>
+<span class="w">			</span><span class="n">occlusion</span><span class="p">,</span>
+<span class="w">			</span><span class="n">getBentNormalSpecularAmount</span><span class="p">());</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="n">specReflection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span>
+<span class="w">			</span><span class="n">vectors</span><span class="p">,</span>
+<span class="w">			</span><span class="n">specColor</span><span class="p">,</span>
+<span class="w">			</span><span class="n">specEdgeColor</span><span class="p">,</span>
+<span class="w">			</span><span class="n">baseRoughness</span><span class="p">,</span>
+<span class="w">			</span><span class="n">occlusion</span><span class="p">,</span>
+<span class="w">			</span><span class="n">getBentNormalSpecularAmount</span><span class="p">());</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specularShading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">specColoring</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">specReflection</span><span class="p">;</span>
+
+<span class="w">	</span><span class="c1">// Sheen:</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sheenEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">sheenOpacity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSheenOpacity</span><span class="p">(</span><span class="n">sheenOpacity_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">		</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sheenOpacity</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="kt">float</span><span class="w"> </span><span class="n">sheenRoughness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSheenRoughness</span><span class="p">(</span><span class="n">sheenRoughness_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">			</span><span class="kt">vec3</span><span class="w"> </span><span class="n">sheenColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sheenOpacity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">getSheenColor</span><span class="p">(</span><span class="n">sheenColor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">			</span><span class="kt">vec3</span><span class="w"> </span><span class="n">sheenSpecularShading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pbrComputeSheen</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="n">sheenColor</span><span class="p">,</span><span class="w"> </span><span class="n">sheenRoughness</span><span class="p">);</span>
+<span class="w">			</span><span class="n">specularShading</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sheenSpecularShading</span><span class="p">;</span>
+<span class="w">		</span><span class="p">}</span>
+<span class="w">	</span><span class="p">}</span>
+
+<span class="w">	</span><span class="c1">// Coating:</span>
+<span class="w">	</span><span class="c1">// Keep track of coat absorption quantity to know how much to reduce contribution for lower layers</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">coatAbsorption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coatOpacity</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">coatNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getWSCoatNormal</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span>
+<span class="w">			</span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">		</span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">coatVectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="n">coatNormal</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">coatColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getCoatColor</span><span class="p">(</span><span class="n">coatColor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">coatSpecularLevel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getCoatSpecularLevel</span><span class="p">(</span><span class="n">coatSpecularLevel_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">coatSpecColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">iorToSpecularLevel</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">coatIoR</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">coatSpecularLevel</span><span class="p">);</span>
+
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">coatRoughness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getCoatRoughness</span><span class="p">(</span><span class="n">coatRoughness_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">coatSpecOcclusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">specularOcclusionCorrection</span><span class="p">(</span><span class="n">occlusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shadowFactor</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">coatRoughness</span><span class="p">);</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">coatSpecularShading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span><span class="n">coatVectors</span><span class="p">,</span><span class="w"> </span><span class="n">coatSpecColor</span><span class="p">,</span><span class="w"> </span><span class="n">coatRoughness</span><span class="p">);</span>
+
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">ndv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clamp</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">coatVectors</span><span class="p">.</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">),</span><span class="w"> </span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">		</span><span class="n">coatAbsorption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coatPassageColorMultiplier</span><span class="p">(</span><span class="n">coatColor</span><span class="p">,</span><span class="w"> </span><span class="n">coatOpacity</span><span class="p">,</span><span class="w"> </span><span class="n">ndv</span><span class="p">);</span>
+<span class="w">		</span><span class="n">coatAbsorption</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">coatAbsorption</span><span class="p">;</span>
+
+<span class="w">		</span><span class="n">diffuseShading</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">coatAbsorption</span><span class="p">;</span>
+<span class="w">		</span><span class="n">specularShading</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">coatAbsorption</span><span class="p">;</span>
+<span class="w">		</span><span class="n">specularShading</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="p">(</span><span class="n">coatSpecOcclusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">coatOpacity</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">coatSpecularShading</span><span class="p">;</span>
+<span class="w">	</span><span class="p">}</span>
+
+<span class="w">	</span><span class="n">albedoOutput</span><span class="p">(</span><span class="n">diffColor</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">emissiveShading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pbrComputeEmissive</span><span class="p">(</span><span class="n">emissive_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+
+<span class="w">	</span><span class="c1">// Blending related effects</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">translucencyEnabled</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">alphaBlendEnabled</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">sssEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+<span class="w">		</span><span class="c1">// Opacity cut-through</span>
+<span class="w">		</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">alphaBlendEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getOpacity</span><span class="p">(</span><span class="n">opacity_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="c1">// Refractive transmission</span>
+<span class="w">		</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">translucencyEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="c1">// Blending premultiplied over: must premultiply contributions manually</span>
+<span class="w">			</span><span class="n">emissiveShading</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">alpha</span><span class="p">;</span>
+<span class="w">			</span><span class="n">specularShading</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">alpha</span><span class="p">;</span>
+<span class="w">			</span><span class="n">diffuseShading</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">alpha</span><span class="p">;</span>
+
+<span class="w">			</span><span class="kt">float</span><span class="w"> </span><span class="n">translucency</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getTranslucency</span><span class="p">(</span><span class="n">sss_translucency_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">			</span><span class="n">diffuseShading</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="mf">1.0</span><span class="o">-</span><span class="n">translucency</span><span class="p">;</span>
+
+<span class="w">			</span><span class="kt">vec3</span><span class="w"> </span><span class="n">absorption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">			</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">absorptionEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">				</span><span class="c1">// Absorption use dual output blending mode</span>
+<span class="w">				</span><span class="n">absorption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coatAbsorption</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">getAbsorptionColor</span><span class="p">(</span><span class="n">absorptioncolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">				</span><span class="n">color1Output</span><span class="p">(</span><span class="kt">vec4</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">-</span><span class="n">alpha</span><span class="o">*</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">-</span><span class="n">absorption</span><span class="o">*</span><span class="n">translucency</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">baseRoughness</span><span class="p">)),</span><span class="w"> </span><span class="mf">1.0</span><span class="p">));</span>
+<span class="w">			</span><span class="p">}</span>
+
+<span class="w">			</span><span class="c1">// Approximation: roughness cutoff the transparency</span>
+<span class="w">			</span><span class="n">diffuseShading</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">absorption</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">baseRoughness</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">translucency</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">envIrradiance</span><span class="p">(</span><span class="o">-</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">			</span>
+<span class="w">			</span><span class="n">alpha</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="mf">1.0</span><span class="o">-</span><span class="p">(</span><span class="n">translucency</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">baseRoughness</span><span class="p">));</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="n">alphaOutput</span><span class="p">(</span><span class="n">alpha</span><span class="p">);</span>
+<span class="w">	</span><span class="p">}</span>
+
+<span class="w">	</span><span class="n">emissiveColorOutput</span><span class="p">(</span><span class="n">emissiveShading</span><span class="p">);</span>
+<span class="w">	</span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="n">diffuseShading</span><span class="p">);</span>
+<span class="w">	</span><span class="n">specularShadingOutput</span><span class="p">(</span><span class="n">specularShading</span><span class="p">);</span>
+
+<span class="w">	</span><span class="n">sssCoefficientsOutput</span><span class="p">(</span><span class="n">getSSSCoefficients</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">));</span>
+
+<span class="w">	</span><span class="kt">vec4</span><span class="w"> </span><span class="n">baseSSSColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSSSColor</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sssEnabled</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">absorptionEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="c1">// Combine absorption color with scattering color if both enabled</span>
+<span class="w">		</span><span class="n">baseSSSColor</span><span class="p">.</span><span class="n">rgb</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">getAbsorptionColor</span><span class="p">(</span><span class="n">absorptioncolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="n">sssColorOutput</span><span class="p">(</span><span class="n">baseSSSColor</span><span class="p">);</span>
+
+<span class="w">	</span><span class="c1">// Discard current fragment on the basis of the opacity channel</span>
+<span class="w">	</span><span class="c1">// and a user defined threshold</span>
+<span class="w">	</span><span class="n">alphaKill</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

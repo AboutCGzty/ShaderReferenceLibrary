@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>layering_declare_stacks.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2016 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Material layering: declare editable stacks</h1>
+<p>An editable stack is defined by a unique identifier and a list of document channels.
+Possible channel id(s) are:
+<code>ambientocclusion</code>
+<code>anisotropyangle</code>
+<code>anisotropylevel</code>
+<code>basecolor</code>
+<code>blendingmask</code>
+<code>coatcolor</code>
+<code>coatnormal</code>
+<code>coatopacity</code>
+<code>coatroughness</code>
+<code>coatspecularlevel</code>
+<code>diffuse</code>
+<code>displacement</code>
+<code>emissive</code>
+<code>glossiness</code>
+<code>height</code>
+<code>ior</code>
+<code>metallic</code>
+<code>normal</code>
+<code>opacity</code>
+<code>reflection</code>
+<code>roughness</code>
+<code>scattering</code>
+<code>scatteringcolor</code>
+<code>sheencolor</code>
+<code>sheenopacity</code>
+<code>sheenroughness</code>
+<code>specular</code>
+<code>specularedgecolor</code>
+<code>specularlevel</code>
+<code>translucency</code>
+<code>transmissive</code>
+<code>user0</code>
+<code>user1</code>
+<code>user2</code>
+<code>user3</code>
+<code>user4</code>
+<code>user5</code>
+<code>user6</code>
+<code>user7</code>
+<code>user8</code>
+<code>user9</code>
+<code>user10</code>
+<code>user11</code>
+<code>user12</code>
+<code>user13</code>
+<code>user14</code>
+<code>user15</code></p>
+<p>An optional format can be specify per channel.
+Possible formats are:
+<code>sRGB8</code>
+<code>L8</code>
+<code>RGB8</code>
+<code>L16</code>
+<code>RGB16</code>
+<code>L16F</code>
+<code>RGB16F</code>
+<code>L32F</code>
+<code>RGB32F</code></p>
+<p>Example:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//:  stacks [</span>
+<span class="c1">//:    {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Mask1&quot;,</span>
+<span class="c1">//:      &quot;channels&quot;: [</span>
+<span class="c1">//:        {&quot;id&quot;: &quot;opacity&quot;}</span>
+<span class="c1">//:      ]</span>
+<span class="c1">//:    }, {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Mask2&quot;,</span>
+<span class="c1">//:      &quot;channels&quot;: [</span>
+<span class="c1">//:        {&quot;id&quot;: &quot;opacity&quot;},</span>
+<span class="c1">//:        {&quot;id&quot;: &quot;user0&quot;, &quot;format&quot;: &quot;RGB8&quot;}</span>
+<span class="c1">//:      ]</span>
+<span class="c1">//:    }</span>
+<span class="c1">//:  ]</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>To bind a channel from a stack to a sampler parameter, prefix the channel tag with the stack identifier:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto Mask1.channel_opacity</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">mask_tex1</span><span class="p">;</span>
+<span class="c1">//: param auto Mask2.channel_opacity</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">mask_tex2</span><span class="p">;</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>toon.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2017 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Basic toon shader</h1>
+<p>Import from libraries.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sampler</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>We define the global light position</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">const</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">light_pos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span><span class="w"> </span><span class="mf">10.0</span><span class="p">,</span><span class="w"> </span><span class="mf">10.0</span><span class="p">);</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>We <strong>bind</strong> the auto param world eye position to our uniform <strong>camera_pos</strong>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto world_eye_position</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">camera_pos</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>We <strong>bind</strong> the document's channel <strong>base color</strong> to our uniform <strong>basecolor_tex</strong>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">basecolor_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>We <strong>bind</strong> the <strong>mesh curvature</strong> to our uniform <strong>curvature_tex</strong>.
+If no curvature is available, transparent texture is provided.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto texture_curvature</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">curvature_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>We define a new custom tweak for this shader, along with its default value.
+This one is used to tweak the thickness of outline, when shadowed.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:  &quot;default&quot;: 0.4,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 1.0,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Unlit outline thickness&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">unlit_outline_thickness</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>We define a new custom tweak for this shader, along with its default value.
+This one is used to tweak the thickness of outline, when lit.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 0.1,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 1.0,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Lit outline thickness&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">lit_outline_thickness</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Whether we prefer using the curvature or not.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Use curvature&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">use_curvature</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Entry point of the shader.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>We compute a few useful values.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">V</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">camera_pos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">position</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">light_pos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">position</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">NdV</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">NdL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="p">));</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p><strong>Priority</strong> is to performs the <strong>outline detection</strong>.
+Allow the user to choose whether he prefers using the curvature map
+for outline detection or not.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">use_curvature</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">curv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">curvature_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">    </span><span class="n">NdV</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">curv</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <p>If outline condition is reach, exit with black color.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NdV</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">unlit_outline_thickness</span><span class="p">,</span><span class="w"> </span><span class="n">lit_outline_thickness</span><span class="p">,</span><span class="w"> </span><span class="n">NdL</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p>Here, we perform a 4 steps discretization of color.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">basecolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NdL</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.75</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">color</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NdL</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NdL</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.1</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">else</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p>Fallback is black.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">    </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="n">color</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

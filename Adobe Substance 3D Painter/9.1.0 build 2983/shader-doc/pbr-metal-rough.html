@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>pbr-metal-rough.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2014 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Substance 3D Painter Metal/Rough PBR shader</h1>
+<p>Import from libraries.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pbr</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">bent</span><span class="o">-</span><span class="n">normal</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">emissive</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pom</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sss</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">utils</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Declare the iray mdl material to use with this shader.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: metadata {</span>
+<span class="c1">//:   &quot;mdl&quot;:&quot;mdl::alg::materials::skin_metallic_roughness::skin_metallic_roughness&quot;</span>
+<span class="c1">//: }</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Channels needed for metal/rough workflow are bound here.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">basecolor_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">roughness_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">metallic_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_specularlevel</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">specularlevel_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Shader entry point.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// Apply parallax occlusion mapping if possible</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">viewTS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldSpaceToTangentSpace</span><span class="p">(</span><span class="n">getEyeVec</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">position</span><span class="p">),</span><span class="w"> </span><span class="n">inputs</span><span class="p">);</span>
+<span class="w">  </span><span class="n">applyParallaxOffset</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="n">viewTS</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Fetch material parameters, and conversion to the specular/roughness model</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getRoughness</span><span class="p">(</span><span class="n">roughness_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">basecolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metallic_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">specularLevel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSpecularLevel</span><span class="p">(</span><span class="n">specularlevel_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateDiffuseColor</span><span class="p">(</span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateSpecularColor</span><span class="p">(</span><span class="n">specularLevel</span><span class="p">,</span><span class="w"> </span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Get detail (ambient occlusion) and global (shadow) occlusion factors</span>
+<span class="w">  </span><span class="c1">// separately in order to blend the bent normals properly</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">shadowFactor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getShadowFactor</span><span class="p">();</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">use_bent_normal</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">specularOcclusionCorrection</span><span class="p">(</span>
+<span class="w">    </span><span class="n">use_bent_normal</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">shadowFactor</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shadowFactor</span><span class="p">,</span>
+<span class="w">    </span><span class="n">metallic</span><span class="p">,</span>
+<span class="w">    </span><span class="n">roughness</span><span class="p">);</span>
+
+<span class="w">  </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">);</span>
+<span class="w">  </span><span class="n">computeBentNormal</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="n">inputs</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Feed parameters for a physically based BRDF integration</span>
+<span class="w">  </span><span class="n">emissiveColorOutput</span><span class="p">(</span><span class="n">pbrComputeEmissive</span><span class="p">(</span><span class="n">emissive_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">));</span>
+<span class="w">  </span><span class="n">albedoOutput</span><span class="p">(</span><span class="n">diffColor</span><span class="p">);</span>
+<span class="w">  </span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="n">occlusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shadowFactor</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">envIrradiance</span><span class="p">(</span><span class="n">getDiffuseBentNormal</span><span class="p">(</span><span class="n">vectors</span><span class="p">)));</span>
+<span class="w">  </span><span class="n">specularShadingOutput</span><span class="p">(</span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">,</span><span class="w"> </span><span class="n">occlusion</span><span class="p">,</span><span class="w"> </span><span class="n">getBentNormalSpecularAmount</span><span class="p">()));</span>
+<span class="w">  </span><span class="n">sssCoefficientsOutput</span><span class="p">(</span><span class="n">getSSSCoefficients</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">));</span>
+<span class="w">  </span><span class="n">sssColorOutput</span><span class="p">(</span><span class="n">getSSSColor</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">));</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

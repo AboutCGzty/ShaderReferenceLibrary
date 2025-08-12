@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>all-custom-qualifiers.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2021 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Custom qualifiers</h1>
+<h2>uniform_specialization</h2>
+<p><em>uniform_specialization</em> custom qualifier can be used as drop-in replacement of <em>uniform</em>
+qualifier before <em>bool</em>, <em>int</em>, <em>float</em>, <em>ivec2</em>, <em>ivec3</em>, <em>ivec4</em>, <em>vec2</em>, <em>vec3</em>, <em>vec4</em> types.
+It's handled as a regular uniform, except that it forces shader specializations: uniform value
+is inlined as a constant.
+An optimized shader is instanced and compiled for each different value chosen by the user.
+For float types, only zero values are specialized.</p>
+<p>By reducing complexity of shaders, in particular uber shaders,
+it allows visible performance boost when used properly, without sacrificing flexibility.</p>
+<p>Basic usage:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: false, &quot;label&quot;: &quot;Heavy feature&quot; }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">u_enable_heavy_featureA</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Contribution weight of another heavy feature&quot; }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_weight_heavy_featureB</span><span class="p">;</span>
+
+<span class="kt">vec4</span><span class="w"> </span><span class="n">heavyFeatureA</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+<span class="kt">vec4</span><span class="w"> </span><span class="n">heavyFeatureB</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Shader entry point</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec4</span><span class="w"> </span><span class="n">result_color</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">u_enable_heavy_featureA</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Eliminated if u_enable_heavy_feature is false</span>
+<span class="w">    </span><span class="n">result_color</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">heavyFeatureA</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// heavyFeatureB() is eliminated if u_weight_heavy_computation is 0</span>
+<span class="w">  </span><span class="n">result_color</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">heavyFeatureB</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">u_weight_heavy_featureB</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">result_color</span><span class="p">;</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

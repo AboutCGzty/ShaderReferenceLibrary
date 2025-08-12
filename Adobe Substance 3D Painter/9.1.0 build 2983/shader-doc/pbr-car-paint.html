@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>pbr-car-paint.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2017 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Substance 3D Painter Car Paint PBR shader</h1>
+<p>Import from libraries.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sampler</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pbr</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param auto channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">basecolor_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">roughness_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">metallic_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>-------EXTERNAL ---------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: &quot;flakes&quot;, &quot;label&quot;: &quot;Flakes Texture&quot;, &quot;usage&quot;: &quot;texture&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">flakes_tex</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 25, &quot;label&quot;: &quot;Flakes Scale&quot;, &quot;min&quot;: 1.0, &quot;max&quot;: 100.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">flakes_scale</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.75, &quot;label&quot;: &quot;Flakes Intensity&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normalPerturbation</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: [0.3,0.3,0], &quot;label&quot;: &quot;Flake Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">flakeLayerColor</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: [0.2,0.0,0.2], &quot;label&quot;: &quot;Secondary Paint Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">paintColorMid</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: [0.3,0.2,0.0], &quot;label&quot;: &quot;Tertiary Paint Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">paintColor2</span><span class="p">;</span>
+
+
+<span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">basecolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metallic_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateDiffuseColor</span><span class="p">(</span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Get detail (ambient occlusion) and global (shadow) occlusion factors</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">getShadowFactor</span><span class="p">();</span>
+
+<span class="w">  </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">//Flakes</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">vFlakesNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">flakes_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">flakes_scale</span><span class="p">).</span><span class="n">rgb</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">vNp1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">vFlakesNormal</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">vNp2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">normalPerturbation</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">vFlakesNormal</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">vNp1World</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeWSNormal</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">vNp1</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">fFresnel1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">vNp1World</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">));</span>
+
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">vNp2World</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeWSNormal</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">vNp2</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">fFresnel2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">vNp2World</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">));</span>
+
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">fFresnel1Sq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fFresnel1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">fFresnel1</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">paintColor</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="n">fFresnel1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">baseColor</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">fFresnel1Sq</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">paintColorMid</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">fFresnel1Sq</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">fFresnel1Sq</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">paintColor2</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">pow</span><span class="p">(</span><span class="n">fFresnel2</span><span class="p">,</span><span class="w"> </span><span class="mf">16.0</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">flakeLayerColor</span><span class="p">;</span>
+<span class="w">  </span><span class="n">diffColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">diffColor</span><span class="p">,</span><span class="w"> </span><span class="n">paintColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+
+<span class="w">  </span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="n">occlusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pbrComputeDiffuse</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">diffColor</span><span class="p">));</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

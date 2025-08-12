@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>index.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <h1>Shader reference</h1>
+<h2>Changelog</h2>
+<ul>
+<li><a href="changelog.html">Full changelog file</a></li>
+</ul>
+<h2>Warm up</h2>
+<p>In Substance 3D Painter, you can write your own shaders in <em>GLSL</em>. We allow
+you to write only a <em>portion</em> of the fragment shader, which is sometimes called
+a <em>surface shader</em>. Without further ado, let's introduce the "Hello world"
+Substance 3D Painter surface shader:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <p>Now, if you save this snippet into a <code>.glsl</code> file and load it into Substance 3D Painter by dropping
+it into your shelf's shader tab, you can now use it and see a beautiful uniform pink color on
+your mesh.</p>
+<h2>Surface shader</h2>
+<ul>
+<li><a href="surface-shader.html">surface-shader.glsl</a></li>
+</ul>
+<h2>Engine provided data</h2>
+<p>In Substance 3D Painter, you can access rendering engine parameters (document's channels,
+additional textures, camera-related data and the like). Here is an exhaustive list of all
+engine provided parameters :</p>
+<ul>
+<li><a href="all-engine-params.html">all-engine-params.glsl</a></li>
+</ul>
+<h2>Engine settings</h2>
+<p>In some cases you may want to use a specific rendering configuration (culling, blending,
+sampling locality, and the like) for an effect. Some rendering states are exposed and
+can be set in the shader. Here is an exhaustive list of all exposed rendering states :</p>
+<ul>
+<li><a href="all-rendering-states-params.html">all-rendering-states-params.glsl</a></li>
+</ul>
+<h2>Custom tweaks</h2>
+<p>It's usual to have custom tweaks in a shader. To do so in Substance 3D Painter's shaders,
+we have introduced a way to specify custom tweaks. Here is an exhaustive list of all custom
+shader tweaks types :</p>
+<ul>
+<li><a href="all-custom-params.html">all-custom-params.glsl</a></li>
+</ul>
+<h2>Custom qualifiers</h2>
+<p>Beside regular GLSL qualifiers, we added a custom <em>uniform_specialization</em> qualifier that
+can be used as drop-in replacement of <em>uniform</em> to optimize uber shaders :</p>
+<ul>
+<li><a href="all-custom-qualifiers.html">all-custom-qualifiers.glsl</a></li>
+</ul>
+<h2>Embedded libraries</h2>
+<p>In order to avoid writing a lot of boilerplate code in all of your shaders,
+we created a small yet practical library of useful functions. <strong>Please note that
+you can't edit it nor create your own at the moment.</strong></p>
+<ul>
+<li><a href="lib-alpha.html">lib-alpha.glsl</a> : contains opacity related helpers</li>
+<li><a href="lib-bayer.html">lib-bayer.glsl</a> : contains bayer matrix helpers</li>
+<li><a href="lib-bent-normal.html">lib-bent-normal.glsl</a> : contains bent normal helpers</li>
+<li><a href="lib-coat.html">lib-coat.glsl</a> : contains coating layer helpers</li>
+<li><a href="lib-defines.html">lib-defines.glsl</a> : contains useful math constants and base defines</li>
+<li><a href="lib-emissive.html">lib-emissive.glsl</a> : contains emissive properties helpers</li>
+<li><a href="lib-env.html">lib-env.glsl</a> : contains environment map related helpers</li>
+<li><a href="lib-normal.html">lib-normal.glsl</a> : contains normal map related helpers (and height-map generated normal map)</li>
+<li><a href="lib-pbr.html">lib-pbr.glsl</a> : contains physically based rendering helpers</li>
+<li><a href="lib-pbr-aniso.html">lib-pbr-aniso.glsl</a> : contains anisotropic physically based rendering helpers</li>
+<li><a href="lib-pom.html">lib-pom.glsl</a> : contains parallax occlusion mapping helpers</li>
+<li><a href="lib-random.html">lib-random.glsl</a> : contains random utilities (low discrepancy sequences)</li>
+<li><a href="lib-sampler.html">lib-sampler.glsl</a> : contains channel getters helpers</li>
+<li><a href="lib-sheen.html">lib-sheen.glsl</a> : contains sheen model reflection helpers</li>
+<li><a href="lib-sparse.html">lib-sparse.glsl</a> : contains safe sparse texture sampling helpers</li>
+<li><a href="lib-sss.html">lib-sss.glsl</a> : contains subsurface scattering helpers</li>
+<li><a href="lib-utils.html">lib-utils.glsl</a> : contains color utility functions (sRGB conversions, tone mapping)</li>
+<li><a href="lib-vectors.html">lib-vectors.glsl</a> : contains common vectors helpers</li>
+</ul>
+<h2>Metadata</h2>
+<p>You can declare additional non required information to give some hint to the
+rendering system. Here is the syntax:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: metadata {</span>
+<span class="c1">//:   &quot;key1&quot;:&quot;value1&quot;,</span>
+<span class="c1">//:   &quot;key2&quot;:&quot;value2&quot;</span>
+<span class="c1">//: }</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Supported keys are:</p>
+<ul>
+<li><strong>custom-ui</strong>: Replace the standard shader parameters user interface with a custom view
+  written as a QML module (see scripting documentation).
+  The path can be absolute or relative to one of your shelf <em>custom-ui</em> folder.</li>
+<li><strong>mdl</strong>: define the Iray mdl material to use with the shader.
+  The path syntax is as follow: <em>mdl::folder1::folder2::mdl_filename::material_name</em>
+  where <em>folder1::folder2::mdl_filename</em> is the path inside one of
+  your shelf <em>mdl</em> folder to a mdl file and <em>::material_name</em> is the
+  name of a material declared inside this mdl file. (ex:
+  "mdl" : "mdl::alg::materials::painter::pbr::physically_metallic_roughness")</li>
+</ul>
+<h2>Example shaders</h2>
+<p>To better understand how to write a complete shader, here are a few examples,
+ordered by increasing complexity:</p>
+<ul>
+<li><a href="pixelated.html">pixelated.glsl</a> : a pixelating shader.</li>
+<li><a href="toon.html">toon.glsl</a> : a toon shader.</li>
+<li><a href="pbr-metal-rough.html">pbr-metal-rough.glsl</a> : the legacy PBR shader.</li>
+<li><a href="asm-metal-rough.html">asm-metal-rough.glsl</a> : the default PBR shader, which implements the Adobe Standard Material Definition.</li>
+</ul>
+<h2>Dynamic material layering</h2>
+<p>The Dynamic Material Layering is a specific workflow where materials are mixed together
+inside a shader and let the user dynamically edit blending masks in Substance 3D Painter.
+To enable this workflow, there are two new functionalities:</p>
+<ul>
+<li>declare editable stacks from a shader definition:  <a href="layering_declare_stacks.html">layering_declare_stacks.glsl</a></li>
+<li>bind materials as shader parameters:  <a href="layering_bind_materials.html">layering_bind_materials.glsl</a></li>
+</ul>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

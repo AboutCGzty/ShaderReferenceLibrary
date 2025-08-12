@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-sparse.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2018 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-sparse.glsl</h1>
+<p>This file provides useful functions to ensure sparse textures sampling
+correctness (ARB_sparse_texture).
+Allows to sample only part of textures really present in video memory.</p>
+<p><strong>Public Functions:</strong>
+<code>getSparseCoord</code>
+<code>getSparseCoordLod0</code>
+<code>textureSparseQueryLod</code>
+<code>textureSparse</code></p>
+<p><strong>Public Structures:</strong>
+<code>SamplerSparse</code>
+<code>SparseCoord</code></p>
+<p>The <code>FEATURE_SPARSE_TEXTURE</code> macro is defined only if the sparse virtual texture extension is enabled.</p>
+<p>If enabled, process additional texture lookup checks to climb up mipmap pyramid if texels are missing.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="cp">#ifdef FEATURE_SPARSE_TEXTURE</span>
+<span class="c1">//: param auto material_lod_check_needed</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">material_lod_check_needed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="c1">//: param auto material_lod_mask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">usampler2D</span><span class="w"> </span><span class="n">material_lod_mask</span><span class="p">;</span>
+<span class="cp">#endif // FEATURE_SPARSE_TEXTURE</span>
+<span class="c1">//: param auto uvtile_reference_sampler</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">uvtile_reference_sampler</span><span class="p">;</span>
+<span class="c1">//: param auto uvtile_size</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uvtile_size</span><span class="p">;</span>
+<span class="c1">//: param auto uvtile_inverse_size</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">uvtile_inverse_size</span><span class="p">;</span>
+<span class="c1">//: param auto uvtile_lod_bias</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">uvtile_lod_bias</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Sampler and sparse texture information structure</p>
+<p>Used to query all sampler related uniforms with a single auto binding</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">struct</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">tex</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec4</span><span class="w"> </span><span class="n">size</span><span class="p">;</span><span class="w"> </span><span class="c1">// width, height, 1/width, 1/height</span>
+<span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_set</span><span class="p">;</span><span class="w">   </span><span class="c1">// a boolean indicating whether the texture is in the texture set or not</span>
+<span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_color</span><span class="p">;</span><span class="w"> </span><span class="c1">// a boolean indicating whether the texture is color (RGBA) or grayscale (R, GB)</span>
+<span class="w">  </span><span class="kt">uvec3</span><span class="w"> </span><span class="n">lod_mask_select</span><span class="p">;</span><span class="w"> </span><span class="c1">// masking operations description allowing to retrieve loaded mipmaps information</span>
+<span class="p">};</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Sparse sampling coordinates</p>
+<p>Store the UV coordinates &amp; material-wise sparse LoD mask</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">struct</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">tex_coord</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfdx</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfdy</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">lod</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">uint</span><span class="w"> </span><span class="n">material_lod_mask</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+<span class="cp">#if defined(SHADER_FRAGMENT)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Build texture coordinates structure used by <code>textureSparse()</code> sampling function
+(must be called from fragment shader)</p>
+<p>Example: <code>SparseCoord uv1coord = getSparseCoord(inputs.multi_tex_coord[1]);</code></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">SparseCoord</span><span class="w"> </span><span class="n">getSparseCoord</span><span class="p">(</span><span class="kt">vec2</span><span class="w"> </span><span class="n">tex_coord</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">res</span><span class="p">;</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex_coord</span><span class="p">;</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">dfdx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dFdx</span><span class="p">(</span><span class="n">tex_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">dfdy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dFdy</span><span class="p">(</span><span class="n">tex_coord</span><span class="p">);</span>
+<span class="cp">#ifdef FEATURE_SPARSE_TEXTURE</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">material_lod_mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">material_lod_check_needed</span><span class="w"> </span><span class="o">?</span>
+<span class="w">    </span><span class="n">textureLod</span><span class="p">(</span><span class="n">material_lod_mask</span><span class="p">,</span><span class="n">tex_coord</span><span class="p">,</span><span class="mf">0.0</span><span class="p">).</span><span class="n">r</span><span class="w"> </span><span class="o">:</span>
+<span class="w">    </span><span class="mo">0</span><span class="n">u</span><span class="p">;</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">lod</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getLodFromReferenceSampler</span><span class="p">(</span><span class="n">tex_coord</span><span class="p">);</span>
+<span class="cp">#endif // FEATURE_SPARSE_TEXTURE</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">res</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="cp">#endif</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Build texture coordinates structure used by <code>textureSparse()</code> sampling function
+Base level sampling version (can be used if outside fragment shader)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">SparseCoord</span><span class="w"> </span><span class="n">getSparseCoordLod0</span><span class="p">(</span><span class="kt">vec2</span><span class="w"> </span><span class="n">tex_coord</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">res</span><span class="p">;</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex_coord</span><span class="p">;</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">dfdx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">dfdy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="cp">#ifdef FEATURE_SPARSE_TEXTURE</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">material_lod_mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">material_lod_check_needed</span><span class="w"> </span><span class="o">?</span>
+<span class="w">    </span><span class="n">textureLod</span><span class="p">(</span><span class="n">material_lod_mask</span><span class="p">,</span><span class="n">tex_coord</span><span class="p">,</span><span class="mf">0.0</span><span class="p">).</span><span class="n">r</span><span class="w"> </span><span class="o">:</span>
+<span class="w">    </span><span class="mo">0</span><span class="n">u</span><span class="p">;</span>
+<span class="w">  </span><span class="n">res</span><span class="p">.</span><span class="n">lod</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="cp">#endif // FEATURE_SPARSE_TEXTURE</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">res</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cp">#if defined(SHADER_FRAGMENT)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Compute the level-of-detail that would be used to sample from a sparse texture</p>
+<p>Climb up mipmap pyramid if texels are missing
+Returns LoD BEFORE LoD bias applied</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">textureSparseQueryLod</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="cp">#ifdef FEATURE_SPARSE_TEXTURE</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">lodfix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">lod</span><span class="p">;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">material_lod_check_needed</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">lodfix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getFixedSparseLod</span><span class="p">(</span><span class="n">getTextureLodMask</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">lod_mask_select</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">material_lod_mask</span><span class="p">),</span><span class="w"> </span><span class="n">lodfix</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">lodfix</span><span class="o">-</span><span class="n">uvtile_lod_bias</span><span class="p">;</span>
+<span class="cp">#else // FEATURE_SPARSE_TEXTURE</span>
+<span class="w">  </span><span class="c1">// Do not use textureQueryLod here: workaround of MacOS driver issue (dramatic FPS drop)</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">dfdx</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">smp</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">xy</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">dfdy</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">smp</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">xy</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">log2</span><span class="p">(</span><span class="n">max</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="w"> </span><span class="n">dx</span><span class="p">),</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span><span class="w"> </span><span class="n">dy</span><span class="p">))));</span>
+<span class="cp">#endif // FEATURE_SPARSE_TEXTURE</span>
+<span class="p">}</span>
+<span class="cp">#endif // SHADER_FRAGMENT</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Compute the derivatives that would be used to sample from a sparse texture</p>
+<p>Climb up mipmap pyramid if texels are missing</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">void</span><span class="w"> </span><span class="n">textureSparseQueryGrad</span><span class="p">(</span><span class="k">out</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfdy</span><span class="p">,</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="cp">#ifdef FEATURE_SPARSE_TEXTURE</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">material_lod_check_needed</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">lodfix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getFixedSparseLod</span><span class="p">(</span><span class="n">getTextureLodMask</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">lod_mask_select</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">material_lod_mask</span><span class="p">),</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">lod</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">coord</span><span class="p">.</span><span class="n">lod</span><span class="o">!=</span><span class="n">lodfix</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Fix dfdx dfdy, take account offset, no more anisotropy</span>
+<span class="w">      </span><span class="kt">vec2</span><span class="w"> </span><span class="n">ddfix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">exp2</span><span class="p">(</span><span class="n">lodfix</span><span class="o">-</span><span class="n">uvtile_lod_bias</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">uvtile_inverse_size</span><span class="p">;</span>
+<span class="w">      </span><span class="n">dfdx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">ddfix</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">      </span><span class="n">dfdy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="n">ddfix</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+<span class="w">      </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="cp">#endif // FEATURE_SPARSE_TEXTURE</span>
+<span class="w">  </span><span class="n">dfdx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">dfdx</span><span class="p">;</span>
+<span class="w">  </span><span class="n">dfdy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">dfdy</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Performs a texture lookup on a sparse texture, go up the mipmap levels if necessary</p>
+<p>This function replaces the standard <code>texture(sampler2D, vec2)</code> to retrieve texels from a sparse texture</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="n">dfdy</span><span class="p">;</span>
+<span class="w">  </span><span class="n">textureSparseQueryGrad</span><span class="p">(</span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">,</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="p">,</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Given a texture, performs an optimized multiple texture lookups with small offsets</p>
+<p>We are providing alternatives versions of this helper for up to N=4</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">void</span><span class="w"> </span><span class="n">textureSparseOffsets</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">offsets</span><span class="p">[</span><span class="n">N</span><span class="p">],</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">results</span><span class="p">[</span><span class="n">N</span><span class="p">])</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="n">dfdy</span><span class="p">;</span>
+<span class="w">  </span><span class="n">textureSparseQueryGrad</span><span class="p">(</span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">,</span><span class="w"> </span><span class="n">smp</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">);</span>
+<span class="w">  </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">smp</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

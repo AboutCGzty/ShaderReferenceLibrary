@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-coat.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2021 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-coat.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>iorToSpecularLevel</code>
+<code>getCoatNormal</code></p>
+<p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">defines</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>All engine parameters useful for coat.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Coat&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;coat&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Simulates a layer on top of the material. Used to create clear coats, lacquers, and varnishes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">coatEnabled</span><span class="p">;</span>
+<span class="c1">//: param auto channel_coatopacity</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">coatOpacity_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_coatcolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">coatColor_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_coatroughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">coatRoughness_tex</span><span class="p">;</span>
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Coat&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Index of refraction&quot;,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 40.0,</span>
+<span class="c1">//:   &quot;default&quot;: 1.6,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.coatEnabled&quot;,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;coat_ior&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The amount light bends as it passes through the coat.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">coatIoR</span><span class="p">;</span>
+<span class="c1">//: param auto channel_coatspecularlevel</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">coatSpecularLevel_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_coatnormal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">coatNormal_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">normal</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sampler</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Compute an f0 at the interface between to materials from their indices of refraction.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">iorToSpecularLevel</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">iorFrom</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">iorTo</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">sqrtR0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">iorTo</span><span class="o">-</span><span class="n">iorFrom</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">iorTo</span><span class="o">+</span><span class="n">iorFrom</span><span class="p">);</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">sqrtR0</span><span class="o">*</span><span class="n">sqrtR0</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Return the coat normal in world space.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getWSCoatNormal</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">tsNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">coatNormal_tex</span><span class="p">.</span><span class="n">is_set</span><span class="w"> </span><span class="o">?</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">coatNormal_tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">),</span><span class="w"> </span><span class="n">base_normal_y_coeff</span><span class="p">)</span><span class="w"> </span><span class="o">:</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">));</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">		</span><span class="n">tsNormal</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">tangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">		</span><span class="n">tsNormal</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">bitangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">		</span><span class="n">tsNormal</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">normal</span>
+<span class="w">	</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Compute the approximate colored coat absorption for a given view direction.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">coatPassageColorMultiplier</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">coatColor</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">coatOpacity</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">ndv</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">min</span><span class="p">(</span><span class="n">coatColor</span><span class="p">.</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="p">(</span><span class="n">coatColor</span><span class="p">.</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="n">coatColor</span><span class="p">.</span><span class="n">b</span><span class="p">))</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">1.0</span><span class="p">)</span>
+<span class="w">	</span><span class="p">{</span>
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">power</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.1575</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="mf">0.24</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">ndv</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ndv</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.25</span><span class="p">;</span>
+<span class="w">		</span><span class="k">return</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="n">mix</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="n">coatColor</span><span class="p">,</span><span class="w"> </span><span class="n">coatOpacity</span><span class="p">),</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">power</span><span class="p">));</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="k">else</span>
+<span class="w">	</span><span class="p">{</span>
+<span class="w">		</span><span class="k">return</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.</span><span class="p">);</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>layering_bind_materials.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2016 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Material layering: bind materials as shader parameters</h1>
+<p>A material is defined by a unique identifier 'id'. Additional parameters:</p>
+<ul>
+<li>'default': the default material resource name to be used.</li>
+<li>'size': the texture size of the material maps.</li>
+<li>'group': the UI group of the material selection widget.</li>
+</ul>
+<p>Example:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//:  materials [</span>
+<span class="c1">//:    {</span>
+<span class="c1">//:       &quot;id&quot;: &quot;Material1&quot;,</span>
+<span class="c1">//:       &quot;default&quot;: &quot;Concrete 044&quot;,</span>
+<span class="c1">//:       &quot;size&quot;: 512,</span>
+<span class="c1">//:       &quot;group&quot;: &quot;Material 1&quot;</span>
+<span class="c1">//:    }, {</span>
+<span class="c1">//:       &quot;id&quot;: &quot;Material2&quot;,</span>
+<span class="c1">//:       &quot;default&quot;: &quot;Leaves elm&quot;,</span>
+<span class="c1">//:       &quot;size&quot;: 1024,</span>
+<span class="c1">//:       &quot;group&quot;: &quot;Material 2&quot;</span>
+<span class="c1">//:    }</span>
+<span class="c1">//:  ]</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>To bind a channel from a material to a sampler, define an auto param with the id of the material
+followed by the channel tag (see the available channels in  <a href="all-engine-params.html">all-engine-params.glsl</a>):</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto Material1.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">basecolor_tex1</span><span class="p">;</span>
+<span class="c1">//: param auto Material1.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metallic_tex1</span><span class="p">;</span>
+<span class="c1">//: param auto Material1.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">roughness_tex1</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material2.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">basecolor_tex2</span><span class="p">;</span>
+<span class="c1">//: param auto Material2.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metallic_tex2</span><span class="p">;</span>
+<span class="c1">//: param auto Material2.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">roughness_tex2</span><span class="p">;</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

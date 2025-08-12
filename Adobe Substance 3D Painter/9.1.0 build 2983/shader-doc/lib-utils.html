@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-utils.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2015 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Utility functions</h1>
+<h2>Tone mapping</h2>
+<p>These are examples of tone mapping you can use in your shader. Painter doesn't apply any
+tone mapping except the optional one applied by Yebis. If you decide to do some tone mapping
+in your shader, it will be applied before Yebis tone mapping.</p>
+<p>Perform the S-curve tone mapping based on the parameters sigma and n.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">tonemapSCurve</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sigma</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">pow_value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">pow_value</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">pow_value</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <h2>sRGB conversions</h2>
+<p>These are the conversions used in Painter.</p>
+<p>sRGB to linear color conversion. Scalar version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">x</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mf">0.04045</span><span class="w"> </span><span class="o">?</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.0773993808</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="c1">// 1.0/12.92</span>
+<span class="w">    </span><span class="n">pow</span><span class="p">((</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.055</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1.055</span><span class="p">,</span><span class="w"> </span><span class="mf">2.4</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>sRGB to linear color conversion. RGB version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">rgb</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span>
+<span class="w">    </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">rgb</span><span class="p">.</span><span class="n">r</span><span class="p">),</span>
+<span class="w">    </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">rgb</span><span class="p">.</span><span class="n">g</span><span class="p">),</span>
+<span class="w">    </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">rgb</span><span class="p">.</span><span class="n">b</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>sRGB to linear color conversion. RGB + Alpha version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">rgba</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">rgba</span><span class="p">.</span><span class="n">rgb</span><span class="p">),</span><span class="w"> </span><span class="n">rgba</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Linear to sRGB color conversion. Scalar version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">x</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mf">0.0031308</span><span class="w"> </span><span class="o">?</span>
+<span class="w">      </span><span class="mf">12.92</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">:</span>
+<span class="w">      </span><span class="mf">1.055</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="mf">0.41666</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">0.055</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Linear to sRGB color conversion. RGB version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">rgb</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span>
+<span class="w">      </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">rgb</span><span class="p">.</span><span class="n">r</span><span class="p">),</span>
+<span class="w">      </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">rgb</span><span class="p">.</span><span class="n">g</span><span class="p">),</span>
+<span class="w">      </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">rgb</span><span class="p">.</span><span class="n">b</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Linear to sRGB color conversion. RGB + Alpha version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">rgba</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">rgba</span><span class="p">.</span><span class="n">rgb</span><span class="p">),</span><span class="w"> </span><span class="n">rgba</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Linear to sRGB color conversion optional. Scalar version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto conversion_linear_to_srgb</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">convert_to_srgb_opt</span><span class="p">;</span>
+<span class="kt">float</span><span class="w"> </span><span class="n">linear2sRGBOpt</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">x</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">convert_to_srgb_opt</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">x</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Linear to sRGB color conversion optional. RGB version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">linear2sRGBOpt</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">rgb</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">convert_to_srgb_opt</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">rgb</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">rgb</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>Linear to sRGB color conversion optional. RGB + Alpha version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">linear2sRGBOpt</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">rgba</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">convert_to_srgb_opt</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">rgba</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">rgba</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p>Color conversion. Scalar version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">output_conversion_method</span><span class="p">;</span>
+<span class="kt">float</span><span class="w"> </span><span class="n">convertOutput</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">x</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">output_conversion_method</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="p">;</span>
+<span class="w">	</span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">output_conversion_method</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
+<span class="w">	</span><span class="k">else</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <p>Color conversion. RGB version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">convertOutput</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">rgb</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">output_conversion_method</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">rgb</span><span class="p">;</span>
+<span class="w">	</span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">output_conversion_method</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">rgb</span><span class="p">);</span>
+<span class="w">	</span><span class="k">else</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">rgb</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p>Color conversion. RGB + Alpha version.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">convertOutput</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">rgba</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">output_conversion_method</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mo">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">rgba</span><span class="p">;</span>
+<span class="w">	</span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">output_conversion_method</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">linear2sRGB</span><span class="p">(</span><span class="n">rgba</span><span class="p">);</span>
+<span class="w">	</span><span class="k">else</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">rgba</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <h2>Dithering</h2>
+<p>These are some helpers to add dithering to shaders.</p>
+<p>Use 8x8 Bayer matrix for dithering mode</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">bayer</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getDitherThreshold</span><span class="p">(</span><span class="kt">uvec2</span><span class="w"> </span><span class="n">coords</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">bayerMatrix8</span><span class="p">(</span><span class="n">coords</span><span class="p">);</span>
+<span class="p">}</span>
+
+
+<span class="kt">vec4</span><span class="w"> </span><span class="n">RGB2Gray</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">rgba</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">gray</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.299</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rgba</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.587</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rgba</span><span class="p">.</span><span class="n">g</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.114</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rgba</span><span class="p">.</span><span class="n">b</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="n">gray</span><span class="p">),</span><span class="w"> </span><span class="n">rgba</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <p>Remove AO and shadows on glossy metallic surfaces (close to mirrors)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">specularOcclusionCorrection</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">diffuseOcclusion</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">diffuseOcclusion</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">roughness</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">roughness</span><span class="p">));</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

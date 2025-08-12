@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-normal.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2014 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-normal.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>normalBlend</code>
+<code>normalBlendOriented</code>
+<code>normalFade</code>
+<code>normalUnpack</code>
+<code>normalFromBaseNormal</code>
+<code>normalFromNormal</code>
+<code>normalFromHeight</code>
+<code>getTSNormal</code>
+<code>computeWSBaseNormal</code>
+<code>computeWSNormal</code></p>
+<p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">defines</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sparse</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>All engine parameters useful for normal-centric operations.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_height</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">height_texture</span><span class="p">;</span>
+<span class="c1">//: param auto channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">normal_texture</span><span class="p">;</span>
+<span class="c1">//: param auto texture_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">base_normal_texture</span><span class="p">;</span>
+<span class="c1">//: param auto normal_blending_mode</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">normal_blending_mode</span><span class="p">;</span>
+<span class="c1">//: param auto height_2_normal_method</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">height_2_normal_method</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Used to invert the Y axis of the normal map</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto normal_y_coeff</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">base_normal_y_coeff</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Empirically determined by our artists...</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">HEIGHT_FACTOR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">400.0</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Perform the blending between 2 normal maps</p>
+<p>This is based on Whiteout blending
+http://blog.selfshadow.com/publications/blending-in-detail/</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">normalBlend</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseNormal</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">overNormal</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span>
+<span class="w">    </span><span class="n">baseNormal</span><span class="p">.</span><span class="n">xy</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">overNormal</span><span class="p">.</span><span class="n">xy</span><span class="p">,</span>
+<span class="w">    </span><span class="n">baseNormal</span><span class="p">.</span><span class="n">z</span><span class="w">  </span><span class="o">*</span><span class="w"> </span><span class="n">overNormal</span><span class="p">.</span><span class="n">z</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Perform a detail oriented blending between 2 normal maps</p>
+<p>This is based on Detail Oriented blending
+http://blog.selfshadow.com/publications/blending-in-detail/</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">normalBlendOriented</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseNormal</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">overNormal</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">baseNormal</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+<span class="w">  </span><span class="n">overNormal</span><span class="p">.</span><span class="n">xy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">overNormal</span><span class="p">.</span><span class="n">xy</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">baseNormal</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">baseNormal</span><span class="p">,</span><span class="n">overNormal</span><span class="p">)</span><span class="w"> </span><span class="o">-</span>
+<span class="w">    </span><span class="n">overNormal</span><span class="o">*</span><span class="n">baseNormal</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Returns a normal flattened by an attenuation factor</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">normalFade</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="p">,</span><span class="kt">float</span><span class="w"> </span><span class="n">attenuation</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">attenuation</span><span class="o">&lt;</span><span class="mf">1.0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">normal</span><span class="p">.</span><span class="n">z</span><span class="o">&lt;</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">attenuation</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">acos</span><span class="p">(</span><span class="n">normal</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+<span class="w">    </span><span class="n">normal</span><span class="p">.</span><span class="n">xy</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="mf">1.0</span><span class="o">/</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">normal</span><span class="p">.</span><span class="n">z</span><span class="o">*</span><span class="n">normal</span><span class="p">.</span><span class="n">z</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">);</span>
+<span class="w">    </span><span class="n">normal</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normal</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Unpack a normal w/ alpha channel</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">normalUnpack</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">normal_alpha</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">y_coeff</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">normal_alpha</span><span class="p">.</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">normal_alpha</span><span class="p">.</span><span class="n">xyz</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// Attenuation in function of alpha</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normal_alpha</span><span class="p">.</span><span class="n">xyz</span><span class="o">/</span><span class="n">normal_alpha</span><span class="p">.</span><span class="n">a</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">  </span><span class="n">normal</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">y_coeff</span><span class="p">;</span>
+<span class="w">  </span><span class="n">normal</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="n">normal</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+<span class="w">  </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">  </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalFade</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">normal_alpha</span><span class="p">.</span><span class="n">a</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normal</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Unpack a normal w/ alpha channel, no Y invertion</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">normalUnpack</span><span class="p">(</span><span class="kt">vec4</span><span class="w"> </span><span class="n">normal_alpha</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">normal_alpha</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>Compute the tangent space normal from document's height channel</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">normalFromHeight</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">height_force</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// Normal computation using height map</span>
+
+<span class="w">  </span><span class="c1">// Determine gradient offset in function of derivatives</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">coord</span><span class="p">.</span><span class="n">dfdx</span><span class="p">,</span><span class="n">coord</span><span class="p">.</span><span class="n">dfdy</span><span class="p">);</span>
+<span class="w">  </span><span class="n">dfd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">dfd</span><span class="p">,</span><span class="n">height_texture</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">zw</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="n">dfdy</span><span class="p">;</span>
+<span class="w">  </span><span class="n">textureSparseQueryGrad</span><span class="p">(</span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">,</span><span class="w"> </span><span class="n">height_texture</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">h_l</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">+</span><span class="kt">vec2</span><span class="p">(</span><span class="o">-</span><span class="n">dfd</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="w">    </span><span class="p">),</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">h_t</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">+</span><span class="kt">vec2</span><span class="p">(</span><span class="w">     </span><span class="mo">0</span><span class="p">,</span><span class="w">  </span><span class="n">dfd</span><span class="p">.</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dh_dudv</span><span class="p">;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">height_2_normal_method</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">h_c</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="p">,</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">	</span><span class="n">dh_dudv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">4.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">height_force</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">dfd</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">h_l</span><span class="o">-</span><span class="n">h_c</span><span class="p">,</span><span class="n">h_c</span><span class="o">-</span><span class="n">h_t</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">h_r</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">+</span><span class="kt">vec2</span><span class="p">(</span><span class="w"> </span><span class="n">dfd</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w">  </span><span class="mo">0</span><span class="w">    </span><span class="p">),</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">h_b</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">+</span><span class="kt">vec2</span><span class="p">(</span><span class="w">     </span><span class="mo">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">dfd</span><span class="p">.</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">h_rt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">+</span><span class="kt">vec2</span><span class="p">(</span><span class="w"> </span><span class="n">dfd</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w">  </span><span class="n">dfd</span><span class="p">.</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">h_lt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">+</span><span class="kt">vec2</span><span class="p">(</span><span class="o">-</span><span class="n">dfd</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w">  </span><span class="n">dfd</span><span class="p">.</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">h_rb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">+</span><span class="kt">vec2</span><span class="p">(</span><span class="w"> </span><span class="n">dfd</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">dfd</span><span class="p">.</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">h_lb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureGrad</span><span class="p">(</span><span class="n">height_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">+</span><span class="kt">vec2</span><span class="p">(</span><span class="o">-</span><span class="n">dfd</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">dfd</span><span class="p">.</span><span class="n">y</span><span class="p">),</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">dh_dudv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">height_force</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">dfd</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span>
+<span class="w">      </span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="n">h_l</span><span class="o">-</span><span class="n">h_r</span><span class="p">)</span><span class="o">+</span><span class="n">h_lt</span><span class="o">-</span><span class="n">h_rt</span><span class="o">+</span><span class="n">h_lb</span><span class="o">-</span><span class="n">h_rb</span><span class="p">,</span>
+<span class="w">      </span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="n">h_b</span><span class="o">-</span><span class="n">h_t</span><span class="p">)</span><span class="o">+</span><span class="n">h_rb</span><span class="o">-</span><span class="n">h_rt</span><span class="o">+</span><span class="n">h_lb</span><span class="o">-</span><span class="n">h_lt</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="n">dh_dudv</span><span class="p">,</span><span class="w"> </span><span class="n">HEIGHT_FACTOR</span><span class="p">));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p>Helper to compute the tangent space normal from base normal and a height
+value, and an optional detail normal.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">texture</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normalFromHeight</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalBlendOriented</span><span class="p">(</span>
+<span class="w">    </span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">texture</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">),</span><span class="w"> </span><span class="n">base_normal_y_coeff</span><span class="p">),</span>
+<span class="w">    </span><span class="n">normalFromHeight</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">normal_texture</span><span class="p">.</span><span class="n">is_set</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">channelNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">normal_texture</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">normal_blending_mode</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">BlendingMode_Replace</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalBlendOriented</span><span class="p">(</span><span class="n">normalFromHeight</span><span class="p">,</span><span class="w"> </span><span class="n">channelNormal</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">normal_blending_mode</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">BlendingMode_NM_Combine</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalBlendOriented</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">channelNormal</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normal</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <p>Overload that use base_normal_texture</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normalFromHeight</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="n">base_normal_texture</span><span class="p">,</span><span class="w"> </span><span class="n">normalFromHeight</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p>Helper to compute the tangent space normal from base normal and height, and
+an optional detail normal.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">texture</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">height_force</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normalH</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalFromHeight</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="n">height_force</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="n">texture</span><span class="p">,</span><span class="w"> </span><span class="n">normalH</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p>Overload that use base_normal_texture</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="n">base_normal_texture</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <p>Helper to compute the world space normal from tangent space base normal.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">computeWSBaseNormal</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal_vec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">normal_texture</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">),</span><span class="w"> </span><span class="n">base_normal_y_coeff</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">    </span><span class="n">normal_vec</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">tangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">normal_vec</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">bitangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">normal_vec</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">normal</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-16'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-16'>#</a>
+      </div>
+      <p>Helper to compute the world space normal from tangent space normal given by
+getTSNormal helpers, and local frame of the mesh.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">computeWSNormal</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal_vec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">coord</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">    </span><span class="n">normal_vec</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">tangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">normal_vec</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">bitangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">normal_vec</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">normal</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

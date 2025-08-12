@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-sss.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2018 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-sss.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>getSSSCoefficients</code>
+<code>getSSSColor</code></p>
+<p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sampler</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>The translucency texture, used as SSS weight</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_translucency</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">sss_translucency_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>The scalar or per component (R,G &amp; B) SSS coefficient texture</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_scattering</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">sss_scattering_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>The scatter color texture, used as SSS albedo</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_scatteringcolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">sss_scatteringcolor_tex</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto scene_original_radius</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sssSceneScale</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior/Subsurface Scattering Parameters&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scatters light below the surface, rather than passing straight through.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: &lt;b&gt;Activate Subsurface Scattering&lt;/b&gt; needs to be enabled in &lt;b&gt;Display Settings&lt;/b&gt; and the following channel needs to be present for the subsurface scattering parameters to have an effect: &lt;b&gt;Scattering&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;scatter&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">sssEnabled</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Select whether the light penetrates straight through the material (translucent)
+or is diffused before starting to scatter (skin).</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 2,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Scattering type&quot;,</span>
+<span class="c1">//:   &quot;widget&quot;: &quot;combobox&quot;,</span>
+<span class="c1">//:   &quot;values&quot;: {</span>
+<span class="c1">//:     &quot;Translucent&quot;: 0,</span>
+<span class="c1">//:     &quot;Skin&quot;: 1,</span>
+<span class="c1">//:     &quot;Red Shift - Rayleigh&quot;: 2</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior/Subsurface Scattering Parameters&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Skin, Translucent/Generic or Red Shift &amp; Rayleigh controls.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: &lt;b&gt;Activate Subsurface Scattering&lt;/b&gt; needs to be enabled in &lt;b&gt;Display Settings&lt;/b&gt; and the following channel needs to be present for the subsurface scattering parameters to have an effect: &lt;b&gt;Scattering&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.sssEnabled&quot;,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;_scatter_type&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">sssType</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Select which channel is used for scatter color.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 0,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Scatter color&quot;,</span>
+<span class="c1">//:   &quot;widget&quot;: &quot;combobox&quot;,</span>
+<span class="c1">//:   &quot;values&quot;: {</span>
+<span class="c1">//:     &quot;Default albedo&quot;: 0,</span>
+<span class="c1">//:     &quot;ScatteringColor channel&quot;: 1</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior/Subsurface Scattering Parameters&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select which channel is used to define scatter color.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: &lt;b&gt;Activate Subsurface Scattering&lt;/b&gt; needs to be enabled in &lt;b&gt;Display Settings&lt;/b&gt; and the following channel needs to be present for the subsurface scattering parameters to have an effect: &lt;b&gt;Scattering&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.sssEnabled&quot;,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;_scattering_color_source&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">sssScatteringColorSource</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Enable subsurface weighting using translucency channel</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Use translucency channel as scattering mask&quot;,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior/Subsurface Scattering Parameters&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select if &lt;b&gt;Translucency&lt;/b&gt; channel is used to interpolate between the scattered diffuse and the original diffuse.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: &lt;b&gt;Activate Subsurface Scattering&lt;/b&gt; needs to be enabled in &lt;b&gt;Display Settings&lt;/b&gt; and the following channel needs to be present for the subsurface scattering parameters to have an effect: &lt;b&gt;Scattering&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.sssEnabled&quot;,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;_scattering_uses_translucency&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">sssScatteringUsesTranslucency</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Global scale to the subsurface scattering effect</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 0.5,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Scale&quot;,</span>
+<span class="c1">//:   &quot;min&quot;: 0.01,</span>
+<span class="c1">//:   &quot;max&quot;: 1.0,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior/Subsurface Scattering Parameters&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Controls the radius/depth of the light absorption in the material.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: &lt;b&gt;Activate Subsurface Scattering&lt;/b&gt; needs to be enabled in &lt;b&gt;Display Settings&lt;/b&gt; and the following channel needs to be present for the subsurface scattering parameters to have an effect: &lt;b&gt;Scattering&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.sssEnabled&quot;,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;scatter_distance&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sssScale</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Wavelength dependency of the SSS of the material</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: [0.701, 0.301, 0.305],</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Color&quot;,</span>
+<span class="c1">//:   &quot;widget&quot;: &quot;color&quot;,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior/Subsurface Scattering Parameters&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The color below the surface that scattered light will become.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: &lt;b&gt;Activate Subsurface Scattering&lt;/b&gt; needs to be enabled in &lt;b&gt;Display Settings&lt;/b&gt; and the following channel needs to be present for the subsurface scattering parameters to have an effect: &lt;b&gt;Scattering&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.sssEnabled &amp;&amp; (input.sssType == 0 || input.sssType == 1)&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">sssColor</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>Red shift scattering</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 0.0,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Red shift&quot;,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 1.0,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior/Subsurface Scattering Parameters&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets red light to travel further than other light colors. Useful for skin.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: &lt;b&gt;Activate Subsurface Scattering&lt;/b&gt; needs to be enabled in &lt;b&gt;Display Settings&lt;/b&gt; and the following channel needs to be present for the subsurface scattering parameters to have an effect: &lt;b&gt;Scattering&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.sssEnabled &amp;&amp; input.sssType == 2&quot;,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;scatter_red_shift&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sssRedShift</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p>Rayleigh scattering</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 0.0,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Rayleigh&quot;,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 1.0,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Interior/Subsurface Scattering Parameters&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets orange light to travel further beneath the surface and blue light to travel less.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: &lt;b&gt;Activate Subsurface Scattering&lt;/b&gt; needs to be enabled in &lt;b&gt;Display Settings&lt;/b&gt; and the following channel needs to be present for the subsurface scattering parameters to have an effect: &lt;b&gt;Scattering&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.sssEnabled &amp;&amp; input.sssType == 2&quot;,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;scatter_rayleigh&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sssRayleigh</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <p>Return the material SSS coefficients from scattering value (per component)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">getSSSCoefficients</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">scattering</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="kt">vec4</span><span class="w"> </span><span class="n">coeffs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sssEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="n">coeffs</span><span class="p">.</span><span class="n">xyz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sssScale</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">sssSceneScale</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">scattering</span><span class="p">;</span>
+<span class="w">		</span><span class="n">coeffs</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coeffs</span><span class="p">.</span><span class="n">xyz</span><span class="o">==</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+<span class="w">		</span><span class="c1">// sssColor still applied here: do not break project that use</span>
+<span class="w">		</span><span class="c1">// stored shader fallbacks (in case of compilation error)</span>
+<span class="w">		</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sssType</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">coeffs</span><span class="p">.</span><span class="n">xyz</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">sssColor</span><span class="p">;</span>
+<span class="w">		</span><span class="p">}</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">coeffs</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p>Return the material SSS coefficients
+Computed from SSS uniforms and Scattering channel sampling</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">getSSSCoefficients</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sssEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="k">return</span><span class="w"> </span><span class="n">getSSSCoefficients</span><span class="p">(</span><span class="n">getScatteringPerComponent</span><span class="p">(</span><span class="n">sss_scattering_tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">));</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p>Return the material SSS color from scatter color and weight (translucency)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">getSSSColor</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">color</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">weight</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">color</span><span class="p">,</span><span class="n">weight</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <p>Return the material SSS color and weight (translucency)
+Sample into the ScatteringColor and Translucency channels</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">getSSSColor</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sssEnabled</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="k">return</span><span class="w"> </span><span class="n">getSSSColor</span><span class="p">(</span>
+<span class="w">			</span><span class="n">sssScatteringColorSource</span><span class="o">==</span><span class="mi">1</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">getScatteringColor</span><span class="p">(</span><span class="n">sss_scatteringcolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span>
+<span class="w">			</span><span class="n">sssScatteringUsesTranslucency</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">getTranslucency</span><span class="p">(</span><span class="n">sss_translucency_tex</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

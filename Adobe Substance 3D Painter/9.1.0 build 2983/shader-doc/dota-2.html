@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>dota-2.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2017 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Substance 3D Painter Dota 2 shader</h1>
+<p>Import from libraries.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sampler</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">env</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">normal</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">alpha</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pbr</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: state cull_face off</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>------------------------- Diffuse Map --------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">diffuseMapSampler</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>-------MASK1 ---------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_user0</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">detail_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_user1</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">fresnelMaskSampler</span><span class="p">;</span>
+<span class="c1">//: param auto channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">metallicSampler</span><span class="p">;</span>
+<span class="c1">//: param auto channel_emissive</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">emissiveSampler</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>-------MASK2 ---------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto channel_specular</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">specularWarpSampler</span><span class="p">;</span>
+<span class="c1">//: param auto channel_user2</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">rimSampler</span><span class="p">;</span>
+<span class="c1">//: param auto channel_user3</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">tintSpecSampler</span><span class="p">;</span>
+<span class="c1">//: param auto channel_glossiness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">glossinessSampler</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>------- Specular Parameters ---------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Specular Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">fSpecularColor</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 16.0, &quot;label&quot;: &quot;Specular Exponent&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 512.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">fSpecularExponent</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 4.0, &quot;label&quot;: &quot;Specular Scale&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 512.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">fSpecularScale</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>------- Rim Lighting Parameters ---------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Rim Light Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">fRimLightColor</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 2.0, &quot;label&quot;: &quot;Rim Light Scale&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 32.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">fRimLightScale</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: true, &quot;label&quot;: &quot;Rim Lighting&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">bDoRimLighting</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>------- Ambient ---------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Ambient Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">fAmbientColor</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1.0, &quot;label&quot;: &quot;Ambient Scale&quot;, &quot;min&quot;: 1.0, &quot;max&quot;: 10.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">fAmbientScale</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: true, &quot;label&quot;: &quot;IBL Lighting&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">bUseIBL</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: false, &quot;label&quot;: &quot;Alpha Test&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">bHasAlpha</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>------- Textures ----------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: false, &quot;label&quot;: &quot;Diffuse Warp&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">bDoDiffuseWarp</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: &quot;fresnelranges&quot;, &quot;label&quot;: &quot;Diffuse Warp&quot;, &quot;usage&quot;: &quot;texture&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">difwarp</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: &quot;&quot;, &quot;label&quot;: &quot;Detail Map&quot;, &quot;usage&quot;: &quot;texture&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">detailMapSampler</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 1.0, &quot;label&quot;: &quot;Detail Scale&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 32.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">fDetailScale</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>------- Lights ----------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: [10.0, 10.0, 10.0], &quot;label&quot;: &quot;Light Position&quot;, &quot;min&quot;: -20, &quot;max&quot;: 20 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">lightPosition_1</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Light Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">lightColor_1</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>-----------------------------------------------------------------//
+------------------------- Data Stucts ---------------------------//
+-----------------------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">struct</span><span class="w"> </span><span class="n">lightProp</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">lightVector</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">lightColor</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">lightProp</span><span class="w"> </span><span class="n">lightArray</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="c1">// Lights! Method based on Xoluil Shader ( http://www.laurenscorijn.com/xoliulshader ) Thanks mate :)</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">PropagateLights</span><span class="p">(</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">position</span><span class="w"> </span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="n">lightArray</span><span class="p">[</span><span class="mo">0</span><span class="p">].</span><span class="n">lightVector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lightPosition_1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">position</span><span class="p">;</span>
+<span class="w">	</span><span class="n">lightArray</span><span class="p">[</span><span class="mo">0</span><span class="p">].</span><span class="n">lightColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lightColor_1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">Fresnel</span><span class="p">(</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">X</span><span class="w"> </span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Fresnel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">clamp</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="p">),</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="n">Fresnel</span><span class="p">,</span><span class="w"> </span><span class="n">X</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">CustomHeroDoLighting</span><span class="p">(</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">LightColor</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">diffuseWarpMask</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">flSpecularExponent</span><span class="p">,</span><span class="w"> </span><span class="k">inout</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">finalDiffuse</span><span class="p">,</span><span class="w"> </span><span class="k">inout</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">finalSpecular</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="c1">// Normalize</span>
+<span class="w">	</span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">L</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">NdotL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">halfLambert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NdotL</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffuseLight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LightColor</span><span class="p">;</span>
+<span class="w">	</span><span class="c1">// diffuse warp</span>
+<span class="w">	</span><span class="n">diffuseLight</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">bDoDiffuseWarp</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">difwarp</span><span class="p">,</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">halfLambert</span><span class="p">,</span><span class="w"> </span><span class="n">diffuseWarpMask</span><span class="p">)).</span><span class="n">rgb</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">halfLambert</span><span class="p">);</span>
+<span class="w">	</span><span class="n">finalDiffuse</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">diffuseLight</span><span class="p">;</span><span class="w"> </span><span class="c1">// Output our diffuse lighting</span>
+
+<span class="w">	</span><span class="n">NdotL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">NdotL</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">R</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reflect</span><span class="p">(</span><span class="w"> </span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="p">);</span><span class="w"> </span><span class="c1">// No half-vector so this is consistent in look with ps2.0</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">RdotL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="w"> </span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">R</span><span class="w"> </span><span class="p">));</span>
+
+<span class="w">	</span><span class="n">flSpecularExponent</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">fSpecularExponent</span><span class="p">;</span><span class="w"> </span><span class="c1">// fSpecularExponent is from the UI Spinner</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flSpecularIntensity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NdotL</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="w"> </span><span class="n">RdotL</span><span class="p">,</span><span class="w"> </span><span class="n">flSpecularExponent</span><span class="w"> </span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">SpecularLighting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">flSpecularIntensity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">LightColor</span><span class="p">;</span>
+<span class="w">	</span><span class="n">finalSpecular</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">SpecularLighting</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">samplerSparse</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">defaultValue</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec2</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">samplerSparse</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">).</span><span class="n">rg</span><span class="p">;</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">value</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">defaultValue</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">value</span><span class="p">.</span><span class="n">g</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="n">PropagateLights</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">position</span><span class="p">.</span><span class="n">xyz</span><span class="p">);</span><span class="w"> </span><span class="c1">// Bring in lights</span>
+
+<span class="w">	</span><span class="c1">// Get world space vectors</span>
+<span class="w">	</span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">	</span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flDetailMask</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">detail_tex</span><span class="w">        </span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flDiffuseWarpMask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">fresnelMaskSampler</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">0.3</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flMetalnessMask</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">metallicSampler</span><span class="w">   </span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flSelfIllumMask</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">emissiveSampler</span><span class="w">   </span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flSpecularMask</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">specularWarpSampler</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">0.3</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flRimMask</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">rimSampler</span><span class="w">         </span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">0.3</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flTintByBaseMask</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">tintSpecSampler</span><span class="w">    </span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">flSpecularExponent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sampleWithDefault</span><span class="p">(</span><span class="n">glossinessSampler</span><span class="w">  </span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">0.3</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">FresnelTerm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">Fresnel</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">,</span><span class="w"> </span><span class="mf">5.0</span><span class="p">));</span>
+<span class="w">	</span><span class="n">FresnelTerm</span><span class="p">.</span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="w"> </span><span class="n">FresnelTerm</span><span class="p">.</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">flDiffuseWarpMask</span><span class="w"> </span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">albedo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">diffuseMapSampler</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">final</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">albedo</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">flSelfIllumMask</span><span class="p">);</span><span class="w"> </span><span class="c1">// emissive</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffuseColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">albedo</span><span class="p">;</span><span class="w"> </span><span class="c1">// assign the diffuse texture to our global diffuse color</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">Detail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">detailMapSampler</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">fDetailScale</span><span class="p">).</span><span class="n">rgb</span><span class="p">;</span>
+<span class="w">	</span><span class="n">diffuseColor</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">Detail</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">flDetailMask</span><span class="p">;</span>
+
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">bHasAlpha</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="n">alphaKill</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">	</span><span class="p">}</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">ambient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fAmbientColor</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">fAmbientScale</span><span class="p">;</span>
+<span class="w">	</span><span class="k">if</span><span class="p">(</span><span class="n">bUseIBL</span><span class="p">)</span>
+<span class="w">	</span><span class="p">{</span>
+<span class="w">		</span><span class="n">ambient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envIrradiance</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">fAmbientScale</span><span class="p">;</span>
+<span class="w">	</span><span class="p">}</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">finalDiffuse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">finalSpecular</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="n">CustomHeroDoLighting</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">lightArray</span><span class="p">[</span><span class="mo">0</span><span class="p">].</span><span class="n">lightVector</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">,</span><span class="w"> </span><span class="n">lightArray</span><span class="p">[</span><span class="mo">0</span><span class="p">].</span><span class="n">lightColor</span><span class="p">,</span><span class="w"> </span><span class="n">flDiffuseWarpMask</span><span class="p">,</span><span class="w"> </span><span class="n">flSpecularExponent</span><span class="p">,</span><span class="w"> </span><span class="n">finalDiffuse</span><span class="p">,</span><span class="w"> </span><span class="n">finalSpecular</span><span class="p">);</span>
+
+<span class="w">	</span><span class="n">final</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">finalDiffuse</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">diffuseColor</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ambient</span><span class="p">;</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">SpecularTint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">diffuseColor</span><span class="p">,</span><span class="w"> </span><span class="n">fSpecularColor</span><span class="p">,</span><span class="w"> </span><span class="n">flTintByBaseMask</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">cSpecular</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">finalSpecular</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">SpecularTint</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">fSpecularScale</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">flSpecularMask</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">FresnelTerm</span><span class="p">.</span><span class="n">b</span><span class="p">;</span>
+<span class="w">	</span><span class="n">final</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">cSpecular</span><span class="p">;</span>
+
+<span class="w">	</span><span class="n">final</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">final</span><span class="p">,</span><span class="w"> </span><span class="n">cSpecular</span><span class="p">,</span><span class="w"> </span><span class="n">flMetalnessMask</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">rimLighting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">bDoRimLighting</span><span class="w"> </span><span class="p">)</span>
+<span class="w">	</span><span class="p">{</span>
+<span class="w">		</span><span class="n">rimLighting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">((</span><span class="n">FresnelTerm</span><span class="p">.</span><span class="n">r</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">fRimLightScale</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">flRimMask</span><span class="p">);</span>
+<span class="w">		</span><span class="n">rimLighting</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">.</span><span class="n">y</span><span class="p">);</span><span class="w"> </span><span class="c1">// Masked by a &#39;sky light&#39;</span>
+<span class="w">		</span><span class="n">rimLighting</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">fRimLightColor</span><span class="p">;</span>
+<span class="w">		</span><span class="n">rimLighting</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">flMetalnessMask</span><span class="p">);</span><span class="w"> </span><span class="c1">// Metalness</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="n">final</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">rimLighting</span><span class="p">;</span>
+
+<span class="w">	</span><span class="n">final</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">getShadowFactor</span><span class="p">();</span>
+<span class="w">	</span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="n">final</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

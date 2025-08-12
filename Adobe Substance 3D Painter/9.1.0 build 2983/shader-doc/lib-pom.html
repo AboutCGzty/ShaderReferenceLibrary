@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-pom.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2017 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-pom.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>getParallaxOffset</code>
+<code>applyParallaxOffset</code></p>
+<p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sampler</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Parallax occlusion mapping related uniforms</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto is_2d_view</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">isTextureView</span><span class="p">;</span>
+
+<span class="c1">//: param auto channel_displacement</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">displacement_texture</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry/Parallax Occlusion Mapping&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Simulates displacement of the surface without actually moving the mesh&#39;s vertices.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: The following channel needs to be present for this parameter to have an effect: &lt;b&gt;Displacement&lt;/b&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">usePOM</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Strength&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: 1.0,</span>
+<span class="c1">//:   &quot;min&quot;: 0.01,</span>
+<span class="c1">//:   &quot;max&quot;: 10.0,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry/Parallax Occlusion Mapping&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.usePOM&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The strength of the simulated displacement.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">pomStrength</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Minimum samples&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: 4,</span>
+<span class="c1">//:   &quot;min&quot;: 1,</span>
+<span class="c1">//:   &quot;max&quot;: 64,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry/Parallax Occlusion Mapping&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.usePOM&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The minimum number of samples performed for the intersection lookup.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">minPOMSamples</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Maximum samples&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: 16,</span>
+<span class="c1">//:   &quot;min&quot;: 1,</span>
+<span class="c1">//:   &quot;max&quot;: 64,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry/Parallax Occlusion Mapping&quot;,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.usePOM&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum number of samples performed for the intersection lookup.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">maxPOMSamples</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Compute the offset of texture coordinates based on parallax</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec2</span><span class="w"> </span><span class="n">getParallaxOffset</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">viewTS</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">usePOM</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">isTextureView</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">displacement_texture</span><span class="p">.</span><span class="n">is_set</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="n">dfdy</span><span class="p">;</span>
+<span class="w">  </span><span class="n">textureSparseQueryGrad</span><span class="p">(</span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">,</span><span class="w"> </span><span class="n">displacement_texture</span><span class="p">,</span><span class="w"> </span><span class="n">coord</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Convention: 1.0 is top, -1.0 is bottom - POM is always inward, no extrusion</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">nbSteps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">(</span><span class="n">mix</span><span class="p">(</span><span class="n">maxPOMSamples</span><span class="p">,</span><span class="w"> </span><span class="n">minPOMSamples</span><span class="p">,</span><span class="w"> </span><span class="n">viewTS</span><span class="p">.</span><span class="n">z</span><span class="p">));</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">amplitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">4.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pomStrength</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">HEIGHT_FACTOR</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">viewTS</span><span class="p">.</span><span class="n">z</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nbSteps</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">rayStep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="o">-</span><span class="n">amplitude</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">viewTS</span><span class="p">.</span><span class="n">xy</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">2.0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">nbSteps</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Raymarch until we cross the surface</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">rayPos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">prevHeight</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">currHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getDisplacement</span><span class="p">(</span><span class="n">textureGrad</span><span class="p">(</span><span class="n">displacement_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">rayPos</span><span class="p">.</span><span class="n">xy</span><span class="p">,</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">));</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">;</span>
+<span class="w">  </span><span class="k">do</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">rayPos</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">rayStep</span><span class="p">;</span>
+<span class="w">    </span><span class="n">prevHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">currHeight</span><span class="p">;</span>
+<span class="w">    </span><span class="n">currHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getDisplacement</span><span class="p">(</span><span class="n">textureGrad</span><span class="p">(</span><span class="n">displacement_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">rayPos</span><span class="p">.</span><span class="n">xy</span><span class="p">,</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">));</span>
+<span class="w">    </span><span class="n">i</span><span class="o">++</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbSteps</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">currHeight</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">rayPos</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Binary search with linear interpolation to refine intersection</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">prevRayPos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rayPos</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rayStep</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">newRayPos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prevRayPos</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">newHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prevHeight</span><span class="p">;</span>
+<span class="w">  </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">;</span>
+<span class="w">  </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">abs</span><span class="p">(</span><span class="n">newHeight</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">newRayPos</span><span class="p">.</span><span class="n">z</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">prevDelta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prevRayPos</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">prevHeight</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">delta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">currHeight</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">rayPos</span><span class="p">.</span><span class="n">z</span><span class="p">;</span>
+<span class="w">    </span><span class="n">newRayPos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">prevDelta</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rayPos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">delta</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">prevRayPos</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">prevDelta</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">delta</span><span class="p">);</span>
+<span class="w">    </span><span class="n">newHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getDisplacement</span><span class="p">(</span><span class="n">textureGrad</span><span class="p">(</span><span class="n">displacement_texture</span><span class="p">.</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">newRayPos</span><span class="p">.</span><span class="n">xy</span><span class="p">,</span><span class="w"> </span><span class="n">dfdx</span><span class="p">,</span><span class="w"> </span><span class="n">dfdy</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">newHeight</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">newRayPos</span><span class="p">.</span><span class="n">z</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">currHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newHeight</span><span class="p">;</span>
+<span class="w">      </span><span class="n">rayPos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newRayPos</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">prevHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newHeight</span><span class="p">;</span>
+<span class="w">      </span><span class="n">prevRayPos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newRayPos</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">i</span><span class="o">++</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">newRayPos</span><span class="p">.</span><span class="n">xy</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">coord</span><span class="p">.</span><span class="n">tex_coord</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Update input texture coordinates with parallax offset</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">void</span><span class="w"> </span><span class="n">applyParallaxOffset</span><span class="p">(</span><span class="k">inout</span><span class="w"> </span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">viewTS</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getParallaxOffset</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">viewTS</span><span class="p">);</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">any</span><span class="p">(</span><span class="n">notEqual</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span><span class="kt">vec2</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">offset</span><span class="p">;</span>
+<span class="w">    </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSparseCoord</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

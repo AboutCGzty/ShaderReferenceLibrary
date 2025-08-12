@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>pbr-velvet.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2017 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Substance 3D Painter PBR Velvet shader</h1>
+<p>Import from libraries.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sampler</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pbr</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">normal</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">utils</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param auto channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">basecolor_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">roughness_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">metallic_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_specularlevel</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">specularlevel_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>-------EXTERNAL ---------------------------------------------------//</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: &quot;fibers&quot;, &quot;label&quot;: &quot;Fibers Texture&quot;, &quot;usage&quot;: &quot;texture&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">fiber_tex</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 50.0, &quot;label&quot;: &quot;Fiber Scale&quot;, &quot;min&quot;: 1.0, &quot;max&quot;: 100.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">fiber_scale</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0.5, &quot;label&quot;: &quot;Sheen&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 2.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sheen</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: &quot;sheen_noise&quot;, &quot;label&quot;: &quot;Sheen Variation&quot;, &quot;usage&quot;: &quot;texture&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">sheen_noise</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 3.0, &quot;label&quot;: &quot;Variation Scale&quot;, &quot;min&quot;: 1.0, &quot;max&quot;: 10.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">sheen_noise_scale</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 8.0, &quot;label&quot;: &quot;Edginess&quot;, &quot;min&quot;: 1.0, &quot;max&quot;: 16.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">edginess</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0.75, &quot;label&quot;: &quot;Fabric Tint&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">tint_amount</span><span class="p">;</span>
+
+
+<span class="c1">// SHADER</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getRoughness</span><span class="p">(</span><span class="n">roughness_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">baseColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">basecolor_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metallic_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">specularLevel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSpecularLevel</span><span class="p">(</span><span class="n">specularlevel_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateDiffuseColor</span><span class="p">(</span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateSpecularColor</span><span class="p">(</span><span class="n">specularLevel</span><span class="p">,</span><span class="w"> </span><span class="n">baseColor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Get detail (ambient occlusion) and global (shadow) occlusion factors</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">getShadowFactor</span><span class="p">();</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">specularOcclusionCorrection</span><span class="p">(</span><span class="n">occlusion</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">);</span>
+
+<span class="w">  </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Material</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffuse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pbrComputeDiffuse</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">diffColor</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">specular</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Velvet reflection, simply summed over previous computation</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">cosine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clamp</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">),</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">)),</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">sine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">cosine</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cosine</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">rand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">fiber_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">fiber_scale</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">noise</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">texture</span><span class="p">(</span><span class="n">sheen_noise</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sheen_noise_scale</span><span class="p">).</span><span class="n">r</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">intensity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rand</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">sheen</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">noise</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.002</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="n">sine</span><span class="p">,</span><span class="w"> </span><span class="n">edginess</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">tint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="n">diffColor</span><span class="p">,</span><span class="w"> </span><span class="n">tint_amount</span><span class="p">);</span>
+<span class="w">  </span><span class="n">diffuse</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">intensity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">occlusion</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">edginess</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">envIrradiance</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">tint</span><span class="p">;</span>
+
+<span class="w">  </span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="n">diffuse</span><span class="p">);</span>
+<span class="w">  </span><span class="n">specularShadingOutput</span><span class="p">(</span><span class="n">specular</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

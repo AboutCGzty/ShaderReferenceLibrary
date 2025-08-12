@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-sheen.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2021 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-sheen.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>pbrComputeSheen</code></p>
+<p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">defines</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>All engine parameters useful for sheen.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Base Surface&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable sheen&quot;,</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;asm&quot;: &quot;sheen&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Simulates the effect of microscopic fibers or fuzz on the surface.&lt;br/&gt;&lt;b&gt;Please note&lt;/b&gt;: The following channel needs to be present for this parameter to have an effect: &lt;b&gt;Sheen opacity&lt;/b&gt;. Optionally, the following channels provide additional control: &lt;b&gt;Sheen color&lt;/b&gt; and &lt;b&gt;Sheen roughness&lt;/b&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">sheenEnabled</span><span class="p">;</span>
+<span class="c1">//: param auto channel_sheenopacity</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">sheenOpacity_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_sheencolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">sheenColor_tex</span><span class="p">;</span>
+<span class="c1">//: param auto channel_sheenroughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">sheenRoughness_tex</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pbr</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Compute the sheen BRDF contribution for importance sampling.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">sheen_contrib</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">ndh</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">ndv</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">Ks</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">ndh2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ndh</span><span class="o">*</span><span class="n">ndh</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">ndl2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ndl</span><span class="o">*</span><span class="n">ndl</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">ndv2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ndv</span><span class="o">*</span><span class="n">ndv</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">r2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">roughness</span><span class="o">*</span><span class="n">roughness</span><span class="p">;</span>
+
+<span class="w">	</span><span class="c1">// TODO: move the D component out, to the importance sampling.</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ndh2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">ndh2</span><span class="o">/</span><span class="n">r2</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Pi_D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">roughness</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">t</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Li</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ndl2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r2</span><span class="o">*</span><span class="n">ndl2</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">ndl</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Lo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ndv2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r2</span><span class="o">*</span><span class="n">ndv2</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">ndv</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">G</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">Li</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">Lo</span><span class="p">)))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">Li</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">Lo</span><span class="p">);</span>
+
+<span class="w">	</span><span class="c1">// This is the contribution when using importance sampling with uniform</span>
+<span class="w">	</span><span class="c1">// sample distribution. This means sheen_contrib = sheen_brdf / (1/(2*Pi))</span>
+<span class="w">	</span><span class="c1">// ndl is omitted since it cancels out with the ndl outside the BRDF.</span>
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">Ks</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">((</span><span class="mf">2.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">Pi_D</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">G</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">ndv</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Compute the microfacets sheen specular reflection to the viewer's eye.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">pbrComputeSheen</span><span class="p">(</span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">radiance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">ndv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">	</span><span class="n">roughness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">envT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">tangent</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">envB</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">bitangent</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">envN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">envE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">envVertexNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">vertexNormal</span><span class="p">);</span>
+
+<span class="w">	</span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mo">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">nbSamples</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<span class="w">	</span><span class="p">{</span>
+<span class="w">		</span><span class="kt">vec2</span><span class="w"> </span><span class="n">Xi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fibonacci2D</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">nbSamples</span><span class="p">);</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">Ln</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">uniformSample</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span><span class="w"> </span><span class="n">envT</span><span class="p">,</span><span class="w"> </span><span class="n">envB</span><span class="p">,</span><span class="w"> </span><span class="n">envN</span><span class="p">);</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">Hn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="n">Ln</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">envE</span><span class="p">);</span>
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">fade</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">horizonFading</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">envVertexNormal</span><span class="p">,</span><span class="w"> </span><span class="n">Ln</span><span class="p">),</span><span class="w"> </span><span class="n">horizonFade</span><span class="p">);</span>
+
+<span class="w">		</span><span class="kt">float</span><span class="w"> </span><span class="n">ndl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">envN</span><span class="p">,</span><span class="w"> </span><span class="n">Ln</span><span class="p">);</span>
+<span class="w">		</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ndl</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ndv</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">ndl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="w"> </span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="n">ndl</span><span class="w"> </span><span class="p">);</span>
+<span class="w">			</span><span class="kt">float</span><span class="w"> </span><span class="n">vdh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">envE</span><span class="p">,</span><span class="w"> </span><span class="n">Hn</span><span class="p">));</span>
+<span class="w">			</span><span class="kt">float</span><span class="w"> </span><span class="n">ndh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">envN</span><span class="p">,</span><span class="w"> </span><span class="n">Hn</span><span class="p">));</span>
+<span class="w">			</span><span class="kt">float</span><span class="w"> </span><span class="n">lodS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLOD</span><span class="p">(</span><span class="n">Ln</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">M_INV_PI</span><span class="p">);</span>
+<span class="w">			</span><span class="n">radiance</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">fade</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">envSample</span><span class="p">(</span><span class="n">Ln</span><span class="p">,</span><span class="w"> </span><span class="n">lodS</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sheen_contrib</span><span class="p">(</span><span class="n">ndh</span><span class="p">,</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span><span class="w"> </span><span class="n">ndv</span><span class="p">,</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="n">radiance</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">nbSamples</span><span class="p">);</span>
+
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">radiance</span><span class="p">;</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

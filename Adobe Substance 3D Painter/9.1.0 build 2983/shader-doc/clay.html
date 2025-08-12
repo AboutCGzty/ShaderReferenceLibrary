@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>clay.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2017 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Substance 3D Painter Clay shader</h1>
+<p>Import from libraries.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">vectors</span><span class="p">.</span><span class="n">glsl</span>
+
+
+<span class="c1">//: param custom { &quot;default&quot;: [0.3, 0.07, 0.05], &quot;label&quot;: &quot;Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">clayColor</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.25, &quot;label&quot;: &quot;Glossiness&quot;, &quot;min&quot;: 0.001, &quot;max&quot;: 1.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">clayGloss</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: [0.3, 0.3, 0.3], &quot;label&quot;: &quot;Dirt Color&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">dirtColor</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.25, &quot;label&quot;: &quot;Dirt Amount&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">clayDirt</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Ambient&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">ambient</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Entry point of the shader.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>We generate local world space vectors</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">);</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Simulate camera aligned lighting</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">NdV</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">));</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>We generate main color from screen-space curvature</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">dNdx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dFdx</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">dNdy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dFdy</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">xneg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dNdx</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">xpos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">dNdx</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">yneg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dNdy</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">ypos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">dNdy</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">depth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">length</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">position</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">curvature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">2.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">cross</span><span class="p">(</span><span class="n">xneg</span><span class="p">,</span><span class="w"> </span><span class="n">xpos</span><span class="p">).</span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">cross</span><span class="p">(</span><span class="n">yneg</span><span class="p">,</span><span class="w"> </span><span class="n">ypos</span><span class="p">).</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">depth</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">dirt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clamp</span><span class="p">(</span><span class="o">-</span><span class="mf">4.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">curvature</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">clayDirt</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffuse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">clayColor</span><span class="p">,</span><span class="w"> </span><span class="n">dirtColor</span><span class="p">,</span><span class="w"> </span><span class="n">dirt</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">specular</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clayGloss</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dirt</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">curvature</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.5</span><span class="p">);</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Ambient and diffuse contribution</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="n">diffuseShadingOutput</span><span class="p">((</span><span class="n">ambient</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">NdV</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">diffuse</span><span class="p">);</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Specular contribution</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">  </span><span class="n">specularShadingOutput</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="n">specular</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pow</span><span class="p">(</span><span class="n">NdV</span><span class="p">,</span><span class="w"> </span><span class="mf">64.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">clayGloss</span><span class="p">)));</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

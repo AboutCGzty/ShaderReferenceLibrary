@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>changelog.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2017 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Changelog</h1>
+<h2>8.2.0</h2>
+<ul>
+<li>Engine parameter <em>environment_rotation</em> in  <a href="lib-env.html">lib-env.glsl</a> is replaced by <em>environment_matrix</em>. Allows more complex environment transformations.</li>
+<li>Dynamic material layering: Add new optional <em>format</em> entry in sub-stack channels declaration.</li>
+</ul>
+<h2>8.1.0</h2>
+<ul>
+<li>Add support for Bent Normals diffuse and specular shading</li>
+<li>New  <a href="lib-bent-normal.html">lib-bent-normal.glsl</a> library to regroup helpers functions</li>
+<li>Updated  <a href="pbrComputeSpecular().html">pbrComputeSpecular()</a> arguments list to add bent normal specular amount</li>
+<li>Added supports for Bent Normals to  <a href="asm-metal-rough.html">asm-metal-rough.glsl</a> and  <a href="pbr-metal-rough.html">pbr-metal-rough.glsl</a> shaders</li>
+<li>Removed support for DISABLE_FRAMEBUFFER_SRGB_CONVERSION define.</li>
+</ul>
+<h2>7.2.0</h2>
+<ul>
+<li>Add a new  <a href="lib-coat.html">lib-coat.glsl</a> library to help handling coating layer in the material.</li>
+<li>Add a new  <a href="lib-sheen.html">lib-sheen.glsl</a> library to help handling sheen specular highlights.</li>
+<li><a href="all-custom-params.html">all-custom-params.glsl</a>: Updated the <em>visible</em> parameter to support dynamic boolean condition.</li>
+<li><a href="all-custom-qualifiers.html">all-custom-qualifiers.glsl</a>: Add new <em>uniform_qualifier</em> to enable/disable parameters at shader compilation time.</li>
+<li><a href="lib-sampler.html">lib-sampler.glsl</a>: Add <em>generateAnisotropicRoughnessASM</em> function to interpret anisotropy parameters in the Adobe Shader Material definition (ASM).</li>
+</ul>
+<h2>2018.3.2</h2>
+<ul>
+<li><a href="lib-sparse.html">lib-sparse.glsl</a>: Sampling functions uses texture derivatives instead simple mipmap level. It's a requirement for the support of anisotropy sampling. Sampling functions signatures are not modified.</li>
+<li><a href="lib-pom.html">lib-pom.glsl</a>: the <em>getParallaxOffset</em> function signature has changed in order to uses texture derivatives</li>
+</ul>
+<h2>2018.3.0</h2>
+<ul>
+<li>Add a new  <a href="lib-pbr-aniso.html">lib-pbr-aniso.glsl</a> library to help visualizing anisotropic specular highlight</li>
+<li>Add a new  <a href="lib-sparse.html">lib-sparse.glsl</a> library to help channel sampling by taking care of mipmaps availability</li>
+<li>Update shader libraries interfaces to take care of this safe sampling</li>
+<li><strong>Deprecation</strong>: The previous functions based on the vec2 texture coordinates and the texture sampler have been deprecated (please use new signatures)</li>
+<li><a href="lib-pom.html">lib-pom.glsl</a>: Add a <em>applyParallaxOffset</em> function to simplify to use of parallax occlusion effect</li>
+<li><a href="lib-random.html">lib-random.glsl</a>: Add a Blue Noise random value generator and temporal alternatives</li>
+<li><a href="lib-sampler.html">lib-sampler.glsl</a>: Split all channel sampling helpers to have both value interpretation and sampling helpers</li>
+</ul>
+<h2>2018.2.0</h2>
+<ul>
+<li><strong>Surface shader API change</strong>: the <em>shade</em> function signature has changed, see  <a href="surface-shader.html">surface-shader.glsl</a></li>
+<li>The <em>shadeShadow</em> function is no longer used and can safely be removed from custom surface shaders</li>
+<li>Add Subsurface Scattering support, see  <a href="surface-shader.html">surface-shader.glsl</a> and  <a href="lib-sss.html">lib-sss.glsl</a> for details</li>
+<li><a href="lib-pbr.html">lib-pbr.glsl</a>: the <em>pbrComputeBRDF</em> function has been removed. See  <a href="pbr-metal-rough.html">pbr-metal-rough.glsl</a> example to know how to use the library now</li>
+<li>New engine parameters have been added: <em>texture_blue_noise</em>, <em>aspect_ratio</em>, <em>camera_vp_matrix_inverse</em>, <em>environment_exposure</em>, <em>environment_rotation</em>, <em>fovy</em>, <em>main_light</em> and <em>screen_size</em>. See  <a href="all-engine-params.html">all-engine-params.glsl</a> for details</li>
+<li>Add the <em>description</em> metadata to provide tooltips for custom shader parameters</li>
+</ul>
+<h2>2017.4.2</h2>
+<ul>
+<li>Fix missing shaders in documentation samples (pixelated and toon shaders)</li>
+<li>Fix dithering for high resolution<ul>
+<li><a href="lib-bayer.html">lib-bayer.glsl</a>: <strong>bayerMatrix8()</strong> return valid values for coords &gt; 4k</li>
+</ul>
+</li>
+</ul>
+<h2>2017.4.1</h2>
+<ul>
+<li>Fix pbr-coated shader<ul>
+<li><a href="lib-vectors.html">lib-vectors.glsl</a>: <strong>tangentSpaceToWorldSpace()</strong> and <strong>worldSpaceToTangentSpace()</strong> outputs are now normalized</li>
+</ul>
+</li>
+</ul>
+<h2>2017.4.0</h2>
+<ul>
+<li>Incorrect specular reflection in the 2D view for certain meshes</li>
+</ul>
+<h2>2017.3.1</h2>
+<ul>
+<li>Cheaper dithering</li>
+</ul>
+<h2>2017.2.0</h2>
+<ul>
+<li>Remove interpolated tbn normalization to match Substance Designer and bakers behavior</li>
+<li>[Viewport] Replace Hammersley table by a Fibonacci spiral</li>
+</ul>
+<h2>2.6.0</h2>
+<ul>
+<li>Fix shaders blending and culling modes</li>
+<li>Rework dithering. Now if we have a render in linear, we apply it after the color profile</li>
+</ul>
+<h2>2.5.0</h2>
+<ul>
+<li>Add support for Color Profiles (LUT) in viewports (Optional sRGB conversion)</li>
+<li>Add dithering to opacity in shaders</li>
+<li>Add parallax occlusion mapping to PBR shaders</li>
+<li>Add a way to hide custom params from the default shader UI</li>
+<li>Add a link to channel tags list in layering shader documentation</li>
+<li>Replace 'channel_ao' tag by 'channel_ambientocclusion'</li>
+<li>[Viewport] Some normal maps have clamped values which appear as artifacts</li>
+<li>Fix available channels in shaders doc</li>
+<li>Allow to define a custom shader UI</li>
+<li>Add a standard custom shader UI for material layering shaders</li>
+<li>Custom UI files are now searched relatively to a shaders/custom-ui folder in the shelves (like the mdl)</li>
+<li>Use the specular level channel in default shaders</li>
+<li>Fix vec3 shader params example</li>
+<li>Upgrade Painter to OpenGL core profile</li>
+</ul>
+<h2>2.4.0</h2>
+<ul>
+<li>Fix the difference on the normal map combined exported and the one displayed in the viewport</li>
+</ul>
+<h2>2.2.0</h2>
+<ul>
+<li>Add support for bindless textures in generic material for non Document textures</li>
+<li>Update custom shader sliders documentation</li>
+<li>Allow to define step precision for sliders</li>
+<li>Documentation for dynamic material layering</li>
+</ul>
+<h2>2.1.1</h2>
+<ul>
+<li>Add a 'RGB2Gray' function in lib-utils</li>
+</ul>
+<h2>2.1.0</h2>
+<ul>
+<li>Allow to define groups for shader parameters and materials/masks</li>
+<li>Add missing channels in documentation ('ao', 'diffuse', 'specularlevel')</li>
+</ul>
+<h2>2.0.4</h2>
+<ul>
+<li>Normal unpack function incorrect with low alpha values</li>
+<li>Allow to read mesh vertex colors in custom shader</li>
+<li>[Viewport] Stretched environment map on some computers</li>
+</ul>
+<h2>2.0.0</h2>
+<ul>
+<li>Allow to override Normal/AO additional maps by dedicated channel</li>
+<li>Change Height2Normal function to use Sobel method</li>
+<li>Add the possibility to define a mdl per shader</li>
+<li>Add a new mdl folder in the shelf</li>
+<li>Add diffuse and specular level channel presets</li>
+<li>Documentation update for tone mapping</li>
+<li>Fix reflections when in orthographic mode</li>
+<li>Fixed the vertical white glitch appearing at a specific location on the envmap</li>
+<li>Allow to define 'default_color' for texture params</li>
+</ul>
+<h2>1.7.0</h2>
+<ul>
+<li>Allow to sample external textures (from shelf)</li>
+</ul>
+<h2>1.6.0</h2>
+<ul>
+<li>Expose gamma/tonemapping function to allow to override them</li>
+<li>Expose multiple texcoords</li>
+</ul>
+<h2>1.5.0</h2>
+<ul>
+<li>Add line number and filename in shader error report</li>
+</ul>
+<h2>1.4.1</h2>
+<ul>
+<li>All sRGB conversions follow the sRGB standard, except those done in the shaders that have close approximation</li>
+<li>Height channel to Normal map is converted to the wrong color space</li>
+</ul>
+<h2>1.4.0</h2>
+<ul>
+<li>Add ambient occlusion channel</li>
+<li>Add new workflow for normal edition</li>
+<li>Add 'or' expression syntax for texture related auto parameters</li>
+<li>Fix pbr shader for Intel gpu on OSX</li>
+</ul>
+<h2>1.3.4</h2>
+<ul>
+<li>Allow to interpolate binormals in fragment shader</li>
+<li>Fix Mikkt tangent space</li>
+</ul>
+<h2>1.3.3</h2>
+<ul>
+<li>Fix spherical harmonics producing negative light intensity</li>
+<li>Exposure computation is different from Substance Designer (and fix exposure slider)</li>
+<li>Shadows should not be visible on 100% metallic surface</li>
+</ul>
+<h2>1.3.0</h2>
+<ul>
+<li>Add shadow function</li>
+<li>Add support for opacity ('alpha_test' and 'alpha_blend')</li>
+</ul>
+<h2>1.2.0</h2>
+<ul>
+<li>Ability to set required openGL states into custom shaders</li>
+<li>Fix inverted bitangents</li>
+<li>Add support for normal channel</li>
+</ul>
+<h2>1.0</h2>
+<ul>
+<li>Add support for custom shaders</li>
+</ul>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

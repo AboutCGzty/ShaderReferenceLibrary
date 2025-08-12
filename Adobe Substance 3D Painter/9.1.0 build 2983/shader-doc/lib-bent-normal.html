@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-bent-normal.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2022 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-bent-normal.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>computeWSBentNormal</code>
+<code>computeBentNormals</code>
+<code>getDiffuseBentNormal</code>
+<code>getBentNormalSpecularAmount</code></p>
+<p>Import from library</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">normal</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="c1">//: param auto texture_bent_normals</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">bent_normal_texture</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: false,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Enable&quot;,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry/Bent Normal&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Uses the baked mesh map &lt;b&gt;Bent normals&lt;/b&gt; for more accurate lighting. This is especially noticeable with metallic surfaces.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="n">uniform_specialization</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">use_bent_normal</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 1.0,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 1.0,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.use_bent_normal&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Diffuse amount&quot;,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry/Bent Normal&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;How much the mesh map &lt;b&gt;Bent normals&lt;/b&gt; affects the diffuse reflection. E.g: A value of 0 would disregard the bent normals completely and use only the regular &lt;b&gt;Normals&lt;/b&gt; mesh map.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">bent_normal_diffuse_amount</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 1.0,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 1.0,</span>
+<span class="c1">//:   &quot;visible&quot;: &quot;input.use_bent_normal&quot;,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Specular amount&quot;,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Geometry/Bent Normal&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;How much the mesh map &lt;b&gt;Bent normals&lt;/b&gt; affects the specular reflection. E.g: A value of 0 would disregard the bent normals completely and use only the regular &lt;b&gt;Normals&lt;/b&gt; mesh map.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">bent_normal_specular_amount</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Helper to compute the bent normal from tangent space normal given by
+getTSNormal helpers, and local frame of the mesh.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">computeWSBentNormal</span><span class="p">(</span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">bent_normal_vec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getTSNormal</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="w"> </span><span class="n">bent_normal_texture</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">    </span><span class="n">bent_normal_vec</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">tangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">bent_normal_vec</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">bitangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">bent_normal_vec</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">normal</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Compute bent normals
+Fill world space bent normal in vectors</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">void</span><span class="w"> </span><span class="n">computeBentNormal</span><span class="p">(</span><span class="k">inout</span><span class="w"> </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">use_bent_normal</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">vectors</span><span class="p">.</span><span class="n">bent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeWSBentNormal</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">getDiffuseBentNormal</span><span class="p">(</span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">use_bent_normal</span><span class="w"> </span><span class="o">?</span>
+<span class="w">    </span><span class="n">normalize</span><span class="p">(</span><span class="n">mix</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">bent</span><span class="p">,</span><span class="w"> </span><span class="n">bent_normal_diffuse_amount</span><span class="p">))</span><span class="w"> </span><span class="o">:</span>
+<span class="w">    </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">getBentNormalSpecularAmount</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">use_bent_normal</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">bent_normal_specular_amount</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

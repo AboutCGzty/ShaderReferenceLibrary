@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>pbr-material-layering-10-mats.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2017 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Substance 3D Painter Material Layering PBR shader</h1>
+<p>Import from libraries.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">pbr</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">emissive</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">sampler</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">utils</span><span class="p">.</span><span class="n">glsl</span>
+
+<span class="cp">#define NB_MATERIALS 10</span>
+<span class="cp">#define NB_MASKS     (NB_MATERIALS - 1)</span>
+
+<span class="c1">//: metadata {</span>
+<span class="c1">//:   &quot;custom-ui&quot;: &quot;material-layering/custom-ui.qml&quot;</span>
+<span class="c1">//: }</span>
+
+<span class="c1">//: materials [</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material1&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 1&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material2&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 2&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material3&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 3&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material4&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 4&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material5&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 5&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material6&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 6&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material7&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 7&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material8&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 8&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material9&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 9&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:      &quot;id&quot;: &quot;Material10&quot;,</span>
+<span class="c1">//:      &quot;label&quot;: &quot;Material 10&quot;,</span>
+<span class="c1">//:      &quot;default&quot;: &quot;&quot;,</span>
+<span class="c1">//:      &quot;size&quot;: 1024,</span>
+<span class="c1">//:      &quot;default_color&quot;: [0.5, 0.5, 0.5]</span>
+<span class="c1">//:   }</span>
+<span class="c1">//: ]</span>
+
+
+<span class="c1">//: stacks [</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask2&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask3&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask4&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask5&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask6&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask7&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask8&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   {</span>
+<span class="c1">//:	    &quot;id&quot;: &quot;Mask9&quot;,</span>
+<span class="c1">//:     &quot;channels&quot;:</span>
+<span class="c1">//:		[</span>
+<span class="c1">//:			{&quot;id&quot;: &quot;blendingmask&quot;}</span>
+<span class="c1">//:		]</span>
+<span class="c1">//:   }</span>
+<span class="c1">//: ]</span>
+
+
+
+<span class="c1">//: param custom { &quot;default&quot;: false, &quot;label&quot;: &quot;Debug Mode&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">DebugMode</span><span class="p">;</span>
+
+<span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 0,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Debug channel&quot;,</span>
+<span class="c1">//:   &quot;widget&quot;: &quot;combobox&quot;,</span>
+<span class="c1">//:   &quot;values&quot;: {</span>
+<span class="c1">//:     &quot;BaseColor&quot;: 0,</span>
+<span class="c1">//:     &quot;Roughness&quot;: 1,</span>
+<span class="c1">//:     &quot;Metallic&quot;: 2,</span>
+<span class="c1">//:     &quot;Normal (Material)&quot;: 3,</span>
+<span class="c1">//:     &quot;Normal (Masks)&quot;: 4,</span>
+<span class="c1">//:     &quot;Normal (Combined)&quot;: 5,</span>
+<span class="c1">//:     &quot;Mask 1&quot;: 6,</span>
+<span class="c1">//:     &quot;Mask 2&quot;: 7,</span>
+<span class="c1">//:     &quot;Mask 3&quot;: 8,</span>
+<span class="c1">//:     &quot;Mask 4&quot;: 9,</span>
+<span class="c1">//:     &quot;Mask 5&quot;: 10,</span>
+<span class="c1">//:     &quot;Mask 6&quot;: 11,</span>
+<span class="c1">//:     &quot;Mask 7&quot;: 12,</span>
+<span class="c1">//:     &quot;Mask 8&quot;: 13,</span>
+<span class="c1">//:     &quot;Mask 9&quot;: 14</span>
+<span class="c1">//:   }</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">DebugChannel</span><span class="p">;</span>
+
+
+<span class="c1">//: param custom { &quot;default&quot;: false, &quot;label&quot;: &quot;Normal from Masks&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">UseNormalFromMask</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <hr />
+<h2>Channels needed for metal/rough workflow are bound here.</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto texture_normal;</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">mesh_normal_texture</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 1 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 1&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords1</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 2 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 2&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords2</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 3 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 3&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords3</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 4 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 4&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords4</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 5 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 5&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords5</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 6 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 6&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords6</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 7 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 7&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords7</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 8 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 8&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords8</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 9 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 9&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords9</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 5, &quot;label&quot;: &quot;Material 10 coords&quot;, &quot;min&quot;: 0.01, &quot;max&quot;: 128.0, &quot;group&quot; : &quot;Material 10&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_coords10</span><span class="p">;</span>
+
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 1&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 1&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity1</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 2&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 2&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity2</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 3&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 3&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity3</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 4&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 4&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity4</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 5&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 5&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity5</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 6&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 6&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity6</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 7&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 7&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity7</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 8&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 8&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity8</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 9&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 9&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity9</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Normal Intensity 10&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;group&quot; : &quot;Material 10&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">normal_intensity10</span><span class="p">;</span>
+
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 2&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 2&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity1</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 3&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 3&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity2</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 4&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 4&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity3</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 5&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 5&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity4</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 6&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 6&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity5</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 7&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 7&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity6</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 8&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 8&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity7</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 9&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 9&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity8</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Normal from Mask Intensity 10&quot;, &quot;min&quot;: -10.0, &quot;max&quot;: 10.0, &quot;group&quot; : &quot;Material 10&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_intensity9</span><span class="p">;</span>
+
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 1 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 2&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset1</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 2 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 3&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset2</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 3 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 4&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset3</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 4 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 5&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset4</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 5 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 6&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset5</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 6 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 7&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset6</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 7 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 8&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset7</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 8 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 9&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset8</span><span class="p">;</span>
+
+<span class="c1">//: param custom { &quot;default&quot;: 0.1, &quot;label&quot;: &quot;Normal from Mask 9 Offset&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1, &quot;group&quot; : &quot;Material 10&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">mask_normal_offset9</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material1.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color1</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material1.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough1</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material1.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal1</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material1.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal1</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material2.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color2</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material2.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough2</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material2.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal2</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material2.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal2</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material3.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color3</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material3.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough3</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material3.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal3</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material3.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal3</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material4.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color4</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material4.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough4</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material4.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal4</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material4.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal4</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material5.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color5</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material5.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough5</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material5.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal5</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material5.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal5</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material6.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color6</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material6.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough6</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material6.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal6</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material6.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal6</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material7.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color7</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material7.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough7</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material7.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal7</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material7.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal7</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material8.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color8</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material8.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough8</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material8.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal8</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material8.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal8</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material9.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color9</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material9.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough9</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material9.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal9</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material9.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal9</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Material10.channel_basecolor</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">color10</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material10.channel_roughness</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">rough10</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material10.channel_metallic</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">metal10</span><span class="p">;</span>
+
+<span class="c1">//: param auto Material10.channel_normal</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">normal10</span><span class="p">;</span>
+
+
+<span class="c1">//: param auto Mask.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask</span><span class="p">;</span>
+
+<span class="c1">//: param auto Mask2.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask2</span><span class="p">;</span>
+
+<span class="c1">//: param auto Mask3.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask3</span><span class="p">;</span>
+
+<span class="c1">//: param auto Mask4.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask4</span><span class="p">;</span>
+
+<span class="c1">//: param auto Mask5.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask5</span><span class="p">;</span>
+
+<span class="c1">//: param auto Mask6.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask6</span><span class="p">;</span>
+
+<span class="c1">//: param auto Mask7.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask7</span><span class="p">;</span>
+
+<span class="c1">//: param auto Mask8.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask8</span><span class="p">;</span>
+
+<span class="c1">//: param auto Mask9.channel_blendingmask</span>
+<span class="k">uniform</span><span class="w"> </span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">mask9</span><span class="p">;</span>
+
+
+<span class="c1">/////////////////////////////////////////</span>
+<span class="c1">////////// BLENDING FUNCTIONS ///////////</span>
+<span class="c1">/////////////////////////////////////////</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">mixGrayscale</span><span class="p">(</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">],</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">])</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="mo">0</span><span class="p">];</span>
+<span class="w">	</span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">NB_MASKS</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="w">		</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">mixColor</span><span class="p">(</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">],</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">])</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="mo">0</span><span class="p">];</span>
+<span class="w">	</span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">NB_MASKS</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="w">		</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">mixNormal</span><span class="p">(</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">],</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">],</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">NormalIntensity</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">])</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NormalIntensity</span><span class="p">[</span><span class="mo">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="mo">0</span><span class="p">];</span>
+<span class="w">	</span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mo">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">NB_MASKS</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="w">		</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">NormalIntensity</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">channelSampled</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">SamplerSparse</span><span class="w"> </span><span class="n">Mask</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">Offset</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">Intensity</span><span class="p">,</span><span class="w"> </span><span class="n">SparseCoord</span><span class="w"> </span><span class="n">UVs</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">refMask</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec4</span><span class="w"> </span><span class="n">results</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">	</span><span class="kt">vec2</span><span class="w"> </span><span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec2</span><span class="p">[</span><span class="mi">2</span><span class="p">](</span>
+<span class="w">		</span><span class="kt">vec2</span><span class="p">(</span><span class="n">Offset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">),</span>
+<span class="w">		</span><span class="kt">vec2</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">Offset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.001</span><span class="p">)</span>
+<span class="w">	</span><span class="p">);</span>
+<span class="w">	</span><span class="n">textureSparseOffsets</span><span class="p">(</span><span class="n">Mask</span><span class="p">,</span><span class="w"> </span><span class="n">UVs</span><span class="p">,</span><span class="w"> </span><span class="n">offsets</span><span class="p">,</span><span class="w"> </span><span class="n">results</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Channel1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">results</span><span class="p">[</span><span class="mo">0</span><span class="p">].</span><span class="n">r</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">refMask</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Channel2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">r</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">refMask</span><span class="p">;</span>
+
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="o">-</span><span class="n">Intensity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">Channel1</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="n">Intensity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">Channel2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">NormalFromMasks</span><span class="p">(</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">normalFromMaskSampled</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">],</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">])</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalFromMaskSampled</span><span class="p">[</span><span class="mo">0</span><span class="p">];</span>
+<span class="w">	</span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">NB_MASKS</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="w">		</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">normalFromMaskSampled</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+
+<span class="w">	</span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+<span class="kt">void</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <hr />
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">	</span><span class="c1">//Global textures</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <hr />
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">	</span><span class="c1">// Get detail (ambient occlusion) and global (shadow) occlusion factors</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">occlusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getAO</span><span class="p">(</span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">getShadowFactor</span><span class="p">();</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">mesh_normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">base_normal_texture</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">),</span><span class="w"> </span><span class="n">base_normal_y_coeff</span><span class="p">);</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <hr />
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">	</span><span class="c1">//Materials Masks</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <hr />
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">UVscale</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">u_coords1</span><span class="p">,</span><span class="w"> </span><span class="n">u_coords2</span><span class="p">,</span><span class="w"> </span><span class="n">u_coords3</span><span class="p">,</span><span class="w"> </span><span class="n">u_coords4</span><span class="p">,</span><span class="w"> </span><span class="n">u_coords5</span><span class="p">,</span>
+<span class="w">		</span><span class="n">u_coords6</span><span class="p">,</span><span class="w"> </span><span class="n">u_coords7</span><span class="p">,</span><span class="w"> </span><span class="n">u_coords8</span><span class="p">,</span><span class="w"> </span><span class="n">u_coords9</span><span class="p">,</span><span class="w"> </span><span class="n">u_coords10</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">NormalIntensity</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">normal_intensity1</span><span class="p">,</span><span class="w"> </span><span class="n">normal_intensity2</span><span class="p">,</span><span class="w"> </span><span class="n">normal_intensity3</span><span class="p">,</span><span class="w"> </span><span class="n">normal_intensity4</span><span class="p">,</span>
+<span class="w">		</span><span class="n">normal_intensity5</span><span class="p">,</span><span class="w"> </span><span class="n">normal_intensity6</span><span class="p">,</span><span class="w"> </span><span class="n">normal_intensity7</span><span class="p">,</span><span class="w"> </span><span class="n">normal_intensity8</span><span class="p">,</span>
+<span class="w">		</span><span class="n">normal_intensity9</span><span class="p">,</span><span class="w"> </span><span class="n">normal_intensity10</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">mask_normal_offset1</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_offset2</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_offset3</span><span class="p">,</span>
+<span class="w">		</span><span class="n">mask_normal_offset4</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_offset5</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_offset6</span><span class="p">,</span>
+<span class="w">		</span><span class="n">mask_normal_offset7</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_offset8</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_offset9</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">mask_normal_intensity1</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_intensity2</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_intensity3</span><span class="p">,</span>
+<span class="w">		</span><span class="n">mask_normal_intensity4</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_intensity5</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_intensity6</span><span class="p">,</span>
+<span class="w">		</span><span class="n">mask_normal_intensity7</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_intensity8</span><span class="p">,</span><span class="w"> </span><span class="n">mask_normal_intensity9</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask2</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">,</span>
+<span class="w">		</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask3</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask4</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">,</span>
+<span class="w">		</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask5</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask6</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">,</span>
+<span class="w">		</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask7</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask8</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">,</span>
+<span class="w">		</span><span class="n">textureSparse</span><span class="p">(</span><span class="n">mask9</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">).</span><span class="n">r</span><span class="p">);</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <hr />
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">	</span><span class="c1">//Mixing</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <hr />
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">roughSampled</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough1</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mo">0</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough2</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough3</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough4</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough5</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough6</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough7</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough8</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough9</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">8</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getRoughness</span><span class="p">(</span><span class="n">rough10</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
+<span class="w">	</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">metallicSampled</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal1</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mo">0</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal2</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal3</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal4</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal5</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal6</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal7</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal8</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal9</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">8</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getMetallic</span><span class="p">(</span><span class="n">metal10</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
+<span class="w">	</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">basecolorSampled</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color1</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mo">0</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color2</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color3</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color4</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color5</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color6</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color7</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color8</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color9</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">8</span><span class="p">]),</span>
+<span class="w">		</span><span class="n">getBaseColor</span><span class="p">(</span><span class="n">color10</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
+<span class="w">	</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">normalSampled</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">[</span><span class="n">NB_MATERIALS</span><span class="p">](</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal1</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mo">0</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal2</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal3</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">2</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal4</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">3</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal5</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">4</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal6</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">5</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal7</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">6</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal8</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">7</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal9</span><span class="p">,</span><span class="w">  </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">8</span><span class="p">])),</span>
+<span class="w">		</span><span class="n">normalUnpack</span><span class="p">(</span><span class="n">texture</span><span class="p">(</span><span class="n">normal10</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tex_coord</span><span class="o">*</span><span class="n">UVscale</span><span class="p">[</span><span class="mi">9</span><span class="p">]))</span>
+<span class="w">	</span><span class="p">);</span>
+
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mixGrayscale</span><span class="p">(</span><span class="n">roughSampled</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">metallic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mixGrayscale</span><span class="p">(</span><span class="n">metallicSampled</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">basecolor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mixColor</span><span class="p">(</span><span class="n">basecolorSampled</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateDiffuseColor</span><span class="p">(</span><span class="n">basecolor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateSpecularColor</span><span class="p">(</span><span class="n">basecolor</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">specularOcclusionCorrection</span><span class="p">(</span><span class="n">occlusion</span><span class="p">,</span><span class="w"> </span><span class="n">metallic</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">);</span>
+
+<span class="w">	</span><span class="c1">//Normal channel</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mixNormal</span><span class="p">(</span><span class="n">normalSampled</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">,</span><span class="w"> </span><span class="n">NormalIntensity</span><span class="p">);</span>
+<span class="w">	</span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">normal</span><span class="p">.</span><span class="n">xy</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">mesh_normal</span><span class="p">.</span><span class="n">xy</span><span class="p">,</span><span class="w"> </span><span class="n">mesh_normal</span><span class="p">.</span><span class="n">z</span><span class="p">)</span><span class="w"> </span><span class="p">);</span><span class="w"> </span><span class="c1">//UDN combine method</span>
+
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">finalNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normal</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">vec3</span><span class="w"> </span><span class="n">normalMask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+
+<span class="w">	</span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="n">UseNormalFromMask</span><span class="w"> </span><span class="p">)</span>
+<span class="w">	</span><span class="p">{</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">normalFromMaskSampled</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">[</span><span class="n">NB_MASKS</span><span class="p">](</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mo">0</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mo">0</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mo">0</span><span class="p">]),</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask2</span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask3</span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask4</span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask5</span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask6</span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask7</span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask8</span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span>
+<span class="w">			</span><span class="n">NormalFromMask</span><span class="p">(</span><span class="n">mask9</span><span class="p">,</span><span class="w"> </span><span class="n">MaskNormalOffset</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span><span class="w"> </span><span class="n">MaskNormalIntensity</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
+<span class="w">		</span><span class="p">);</span>
+
+<span class="w">		</span><span class="n">normalMask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NormalFromMasks</span><span class="p">(</span><span class="n">normalFromMaskSampled</span><span class="p">,</span><span class="w"> </span><span class="n">Masks</span><span class="p">);</span>
+<span class="w">		</span><span class="n">finalNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">finalNormal</span><span class="p">.</span><span class="n">xy</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">normalMask</span><span class="p">.</span><span class="n">xy</span><span class="p">,</span><span class="w"> </span><span class="n">finalNormal</span><span class="p">.</span><span class="n">z</span><span class="p">)</span><span class="w"> </span><span class="p">);</span><span class="w"> </span><span class="c1">//UDN combine method</span>
+<span class="w">	</span><span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <hr />
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">	</span><span class="c1">//Final</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <hr />
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="w">	</span><span class="c1">//Debug mode display result of combined channels or Masks</span>
+<span class="w">	</span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="o">!</span><span class="n">DebugMode</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">finalNormalWorldSpace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">			</span><span class="n">finalNormal</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">tangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">			</span><span class="n">finalNormal</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">bitangent</span><span class="w"> </span><span class="o">+</span>
+<span class="w">			</span><span class="n">finalNormal</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">		</span><span class="c1">// Feed parameters for a physically based BRDF integration.</span>
+<span class="w">		</span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeLocalFrame</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="n">finalNormalWorldSpace</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">		</span><span class="n">emissiveColorOutput</span><span class="p">(</span><span class="n">pbrComputeEmissive</span><span class="p">(</span><span class="n">emissive_tex</span><span class="p">,</span><span class="w"> </span><span class="n">inputs</span><span class="p">.</span><span class="n">sparse_coord</span><span class="p">));</span>
+<span class="w">		</span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="n">occlusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pbrComputeDiffuse</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="n">diffColor</span><span class="p">));</span>
+<span class="w">		</span><span class="n">specularShadingOutput</span><span class="p">(</span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">));</span>
+<span class="w">	</span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">		</span><span class="kt">vec3</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+
+<span class="w">		</span><span class="c1">//BaseColor combined</span>
+<span class="w">		</span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="n">DebugChannel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mo">0</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">basecolor</span><span class="p">;</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="c1">//Roughness combined</span>
+<span class="w">		</span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="n">DebugChannel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">roughness</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="c1">//Metallic combined</span>
+<span class="w">		</span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="n">DebugChannel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">metallic</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="c1">//Normal combined</span>
+<span class="w">		</span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="n">DebugChannel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">normal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">normal</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+<span class="w">			</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="c1">//Combined masks as Normal</span>
+<span class="w">		</span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="n">DebugChannel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">normalMask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">normalMask</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+<span class="w">			</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">normalMask</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="c1">//Final Normal</span>
+<span class="w">		</span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="n">DebugChannel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">finalNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">finalNormal</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+<span class="w">			</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">finalNormal</span><span class="p">);</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="c1">//Mask(s)</span>
+<span class="w">		</span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">			</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="n">sRGB2linear</span><span class="p">(</span><span class="n">Masks</span><span class="p">[</span><span class="n">DebugChannel</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">6</span><span class="p">]));</span>
+<span class="w">		</span><span class="p">}</span>
+
+<span class="w">		</span><span class="n">diffuseShadingOutput</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

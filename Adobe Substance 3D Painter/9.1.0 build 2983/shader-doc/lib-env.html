@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-env.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2014 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-env.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>envSample</code>
+<code>envIrradiance</code>
+<code>worldToEnvSpace</code></p>
+<p>Needed for math constants</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">defines</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Engine provided parameters</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto texture_environment</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">environment_texture</span><span class="p">;</span>
+<span class="c1">//: param auto environment_matrix</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat3</span><span class="w"> </span><span class="n">environment_matrix</span><span class="p">;</span>
+<span class="c1">//: param auto environment_exposure</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">environment_exposure</span><span class="p">;</span>
+<span class="c1">//: param auto environment_irrad_mat_red</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">irrad_mat_red</span><span class="p">;</span>
+<span class="c1">//: param auto environment_irrad_mat_green</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">irrad_mat_green</span><span class="p">;</span>
+<span class="c1">//: param auto environment_irrad_mat_blue</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">mat4</span><span class="w"> </span><span class="n">irrad_mat_blue</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Helper that allows one to sample environment. Rotation is taken into
+account. The environment map is a panoramic env map behind the scene,
+that's why there is extra computation from dir vector.
+Direction must be in environment space (using worldToEnvSpace function)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">envSample</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">dir</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">lod</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// WORKAROUND: Intel GLSL compiler for HD5000 is bugged on OSX:</span>
+<span class="w">  </span><span class="c1">// https://bugs.chromium.org/p/chromium/issues/detail?id=308366</span>
+<span class="w">  </span><span class="c1">// It is necessary to replace atan(y, -x) by atan(y, -1.0 * x) to force</span>
+<span class="w">  </span><span class="c1">// the second parameter to be interpreted as a float</span>
+<span class="w">  </span><span class="kt">vec2</span><span class="w"> </span><span class="n">pos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">M_INV_PI</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="n">atan</span><span class="p">(</span><span class="o">-</span><span class="n">dir</span><span class="p">.</span><span class="n">z</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dir</span><span class="p">.</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="mf">2.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">asin</span><span class="p">(</span><span class="n">dir</span><span class="p">.</span><span class="n">y</span><span class="p">));</span>
+<span class="w">  </span><span class="n">pos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="kt">vec2</span><span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">textureLod</span><span class="p">(</span><span class="n">environment_texture</span><span class="p">,</span><span class="w"> </span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">lod</span><span class="p">).</span><span class="n">rgb</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">environment_exposure</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Transform a direction from world to environment space</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">dirW</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">environment_matrix</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dirW</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Return the irradiance for a given direction. The computation is based on
+environment's spherical harmonics projection.
+Direction in world space</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">envIrradiance</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">dirW</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec4</span><span class="w"> </span><span class="n">shDir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">dirW</span><span class="p">).</span><span class="n">xzy</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span>
+<span class="w">      </span><span class="n">dot</span><span class="p">(</span><span class="n">shDir</span><span class="p">,</span><span class="w"> </span><span class="n">irrad_mat_red</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shDir</span><span class="p">),</span>
+<span class="w">      </span><span class="n">dot</span><span class="p">(</span><span class="n">shDir</span><span class="p">,</span><span class="w"> </span><span class="n">irrad_mat_green</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shDir</span><span class="p">),</span>
+<span class="w">      </span><span class="n">dot</span><span class="p">(</span><span class="n">shDir</span><span class="p">,</span><span class="w"> </span><span class="n">irrad_mat_blue</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">shDir</span><span class="p">)</span>
+<span class="w">    </span><span class="p">))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">environment_exposure</span><span class="p">;</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

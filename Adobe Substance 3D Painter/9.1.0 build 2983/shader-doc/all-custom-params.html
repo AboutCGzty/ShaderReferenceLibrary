@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>all-custom-params.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2014 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Custom parameters sample shader</h1>
+<p><strong>Please note that all custom tweaks need at least a <code>default</code> value.</strong></p>
+<p>Group your parameters by adding a <code>group</code> value.</p>
+<p>Dynamically hide a parameter in the UI by setting <code>visible</code> value.</p>
+<p>Add a tooltip on the parameter by setting a <code>description</code> value.</p>
+<h2>Visible value</h2>
+<p>One can hide or show the parameter in the UI, depending on other parameters values.
+Simply write an expression resulting in a boolean in the <code>visible</code> parameter.
+Acces other parameters values with <code>input.parameterName</code> syntax.
+Consider the following example where <code>param2</code> is visible to the user only when <code>param1</code> is less than 5.
+For more examples and exhaustive syntax, please see the
+<a href="https://www.adobe.com/go/painter-visible-display-hide-inputs-outputs">Substance Visible If documentation</a>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int slider&quot;, &quot;min&quot;: 0, &quot;max&quot;: 10 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_slider_param1</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Optional int spinbox&quot;, &quot;visible&quot; : &quot;input.u_slider_param1 &lt; 5&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_spin_param2</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <h2>Color parameters</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Color RGB&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">u_color_float3</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 1, &quot;label&quot;: &quot;Color RGBA&quot;, &quot;widget&quot;: &quot;color&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">u_color_float4</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <h2>Spinboxes parameters</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int spinbox&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_spin_int1</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int2 spinbox&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">ivec2</span><span class="w"> </span><span class="n">u_spin_int2</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int3 spinbox&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">ivec3</span><span class="w"> </span><span class="n">u_spin_int3</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int4 spinbox&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">ivec4</span><span class="w"> </span><span class="n">u_spin_int4</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Float spinbox&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_spin_float1</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Float2 spinbox&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">u_spin_float2</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Float3 spinbox&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">u_spin_float3</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Float4 spinbox&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">u_spin_float4</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <h2>Slider parameters</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int slider&quot;, &quot;min&quot;: 0, &quot;max&quot;: 10 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_slider_int1</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int slider&quot;, &quot;min&quot;: 0, &quot;max&quot;: 10, &quot;step&quot;: 2 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_slider_int1_stepped</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int2 slider&quot;, &quot;min&quot;: 0, &quot;max&quot;: 10 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">ivec2</span><span class="w"> </span><span class="n">u_slider_int2</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int3 slider&quot;, &quot;min&quot;: 0, &quot;max&quot;: 10 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">ivec3</span><span class="w"> </span><span class="n">u_slider_int3</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Int4 slider&quot;, &quot;min&quot;: 0, &quot;max&quot;: 10 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">ivec4</span><span class="w"> </span><span class="n">u_slider_int4</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Float slider&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">u_slider_float1</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Float2 slider&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec2</span><span class="w"> </span><span class="n">u_slider_float2</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: [0.2, 0.5, 0.8], &quot;label&quot;: &quot;Float3 slider&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">u_slider_float3</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: 0, &quot;label&quot;: &quot;Float4 slider&quot;, &quot;min&quot;: 0.0, &quot;max&quot;: 1.0, &quot;step&quot;: 0.02 }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">u_slider_float4_stepped</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <h2>Bool parameters</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: false, &quot;label&quot;: &quot;Boolean&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">u_bool</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <h2>Sampler parameters</h2>
+<p>The texture is defined by its name in the shelf and must be in the <code>Textures</code> or <code>Environments</code> category.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom { &quot;default&quot;: &quot;&quot;, &quot;default_color&quot;: [1.0, 1.0, 0.0, 1.0], &quot;label&quot;: &quot;Texture&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">u_sampler1</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: &quot;texture_name&quot;, &quot;label&quot;: &quot;Texture&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">u_sampler2</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: &quot;texture_name&quot;, &quot;label&quot;: &quot;Texture&quot;, &quot;usage&quot;: &quot;texture&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">u_sampler3</span><span class="p">;</span>
+<span class="c1">//: param custom { &quot;default&quot;: &quot;texture_name&quot;, &quot;label&quot;: &quot;Texture&quot;, &quot;usage&quot;: &quot;environment&quot; }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">sampler2D</span><span class="w"> </span><span class="n">u_sampler4</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <h2>Combobox parameters</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: -1,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Combobox&quot;,</span>
+<span class="c1">//:   &quot;widget&quot;: &quot;combobox&quot;,</span>
+<span class="c1">//:   &quot;values&quot;: {</span>
+<span class="c1">//:     &quot;Value -1&quot;: -1,</span>
+<span class="c1">//:     &quot;Value 0&quot;: 0,</span>
+<span class="c1">//:     &quot;Value 10&quot;: 10</span>
+<span class="c1">//:   }</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">u_combobox</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Shader entry point</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec4</span><span class="w"> </span><span class="n">shade</span><span class="p">(</span><span class="n">V2F</span><span class="w"> </span><span class="n">inputs</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// We simply return the value of the RGB color picker</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kt">vec4</span><span class="p">(</span><span class="n">u_color_float3</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+

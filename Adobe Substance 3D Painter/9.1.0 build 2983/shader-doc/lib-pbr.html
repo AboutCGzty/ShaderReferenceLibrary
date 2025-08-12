@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>lib-pbr.glsl</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="cm">/*************************************************************************</span>
+<span class="cm">* ADOBE CONFIDENTIAL</span>
+<span class="cm">* ___________________</span>
+<span class="cm">* Copyright 2010-2014 Adobe</span>
+<span class="cm">* All Rights Reserved.</span>
+<span class="cm">* NOTICE:  All information contained herein is, and remains</span>
+<span class="cm">* the property of Adobe and its suppliers, if any. The intellectual</span>
+<span class="cm">* and technical concepts contained herein are proprietary to Adobe</span>
+<span class="cm">* and its suppliers and are protected by all applicable intellectual</span>
+<span class="cm">* property laws, including trade secret and copyright laws.</span>
+<span class="cm">* Dissemination of this information or reproduction of this material</span>
+<span class="cm">* is strictly forbidden unless prior written permission is obtained</span>
+<span class="cm">* from Adobe.</span>
+<span class="cm">*************************************************************************/</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>lib-pbr.glsl</h1>
+<p><strong>Public Functions:</strong>
+<code>normal_distrib</code>
+<code>fresnel</code>
+<code>G1</code>
+<code>visibility</code>
+<code>horizonFading</code>
+<code>pbrComputeDiffuse</code>
+<code>pbrComputeSpecular</code></p>
+<p>Number of miplevels in the envmap.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param auto environment_max_lod</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">maxLod</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>An int representing the number of samples made for specular contribution
+computation. The more the higher quality and the performance impact.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 16,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Specular quality&quot;,</span>
+<span class="c1">//:   &quot;widget&quot;: &quot;combobox&quot;,</span>
+<span class="c1">//:   &quot;values&quot;: {</span>
+<span class="c1">//:     &quot;Very low (4 spp)&quot;: 4,</span>
+<span class="c1">//:     &quot;Low (16 spp)&quot;: 16,</span>
+<span class="c1">//:     &quot;Medium (32 spp)&quot;: 32,</span>
+<span class="c1">//:     &quot;High (64 spp)&quot;: 64,</span>
+<span class="c1">//:     &quot;Very high (128 spp)&quot;: 128,</span>
+<span class="c1">//:     &quot;Ultra (256 spp)&quot;: 256</span>
+<span class="c1">//:   },</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Base Surface&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The quality of the specular reflection. Choose the number of samples per pixel (SPP).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nbSamples</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Value used to control specular reflection leaking through the surface.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="c1">//: param custom {</span>
+<span class="c1">//:   &quot;default&quot;: 1.3,</span>
+<span class="c1">//:   &quot;label&quot;: &quot;Horizon fading&quot;,</span>
+<span class="c1">//:   &quot;min&quot;: 0.0,</span>
+<span class="c1">//:   &quot;max&quot;: 2.0,</span>
+<span class="c1">//:   &quot;group&quot;: &quot;Base Surface&quot;,</span>
+<span class="c1">//:   &quot;description&quot;: &quot;&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reduces unexpected specular reflection at angles pointing beneath the surface horizon.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
+<span class="c1">//: }</span>
+<span class="k">uniform</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">horizonFade</span><span class="p">;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Import from library, other parameters</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">env</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">emissive</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">random</span><span class="p">.</span><span class="n">glsl</span>
+<span class="n">import</span><span class="w"> </span><span class="n">lib</span><span class="o">-</span><span class="n">vectors</span><span class="p">.</span><span class="n">glsl</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>BRDF related functions</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">EPSILON_COEF</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">4</span><span class="p">;</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">normal_distrib</span><span class="p">(</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndh</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">Roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// use GGX / Trowbridge-Reitz, same as Disney and Unreal 4</span>
+<span class="w">  </span><span class="c1">// cf http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf p3</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Roughness</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">Roughness</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">tmp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">8</span><span class="p">,(</span><span class="n">ndh</span><span class="o">*</span><span class="n">ndh</span><span class="o">*</span><span class="p">(</span><span class="n">alpha</span><span class="o">*</span><span class="n">alpha</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span><span class="o">+</span><span class="mf">1.0</span><span class="p">));</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">tmp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">tmp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">M_INV_PI</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">fresnel</span><span class="p">(</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">vdh</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F0</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// Schlick with Spherical Gaussian approximation</span>
+<span class="w">  </span><span class="c1">// cf http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf p3</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">sphg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">exp2</span><span class="p">((</span><span class="o">-</span><span class="mf">5.55473</span><span class="o">*</span><span class="n">vdh</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">6.98316</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">vdh</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">F0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">F0</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sphg</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">fresnel</span><span class="p">(</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">vdh</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F0</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F82</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">F82</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">F0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">9.48471792</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">8.16666665</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">vdh</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">e5</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">e</span><span class="p">;</span><span class="w"> </span><span class="n">e5</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">e5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">e</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">F0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">vdh</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">e</span><span class="p">))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">e5</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">clamp</span><span class="p">(</span><span class="n">F0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">G1</span><span class="p">(</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndw</span><span class="p">,</span><span class="w"> </span><span class="c1">// w is either Ln or Vn</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">k</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// One generic factor of the geometry function divided by ndw</span>
+<span class="w">  </span><span class="c1">// NB : We should have k &gt; 0</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">ndw</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">  </span><span class="n">k</span><span class="w"> </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">visibility</span><span class="p">(</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndv</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">Roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// Schlick with Smith-like choice of k</span>
+<span class="w">  </span><span class="c1">// cf http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf p3</span>
+<span class="w">  </span><span class="c1">// visibility is a Cook-Torrance geometry function divided by (n.l)*(n.v)</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">Roughness</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">Roughness</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">5</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">G1</span><span class="p">(</span><span class="n">ndl</span><span class="p">,</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">G1</span><span class="p">(</span><span class="n">ndv</span><span class="p">,</span><span class="n">k</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">cook_torrance_contrib</span><span class="p">(</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">vdh</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndh</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndv</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F0</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F82</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">Roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// This is the contribution when using importance sampling with the GGX based</span>
+<span class="w">  </span><span class="c1">// sample distribution. This means ct_contrib = ct_brdf / ggx_probability</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">fresnel</span><span class="p">(</span><span class="n">vdh</span><span class="p">,</span><span class="w"> </span><span class="n">F0</span><span class="p">,</span><span class="w"> </span><span class="n">F82</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">visibility</span><span class="p">(</span><span class="n">ndl</span><span class="p">,</span><span class="w"> </span><span class="n">ndv</span><span class="p">,</span><span class="w"> </span><span class="n">Roughness</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">vdh</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ndl</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">ndh</span><span class="w"> </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">cook_torrance_contrib</span><span class="p">(</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">vdh</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndh</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndv</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">Ks</span><span class="p">,</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">Roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">cook_torrance_contrib</span><span class="p">(</span><span class="n">vdh</span><span class="p">,</span><span class="w"> </span><span class="n">ndh</span><span class="p">,</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span><span class="w"> </span><span class="n">ndv</span><span class="p">,</span><span class="w"> </span><span class="n">Ks</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="n">Roughness</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">uniformSample</span><span class="p">(</span><span class="kt">vec2</span><span class="w"> </span><span class="n">Xi</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">N</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">cosT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Xi</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">sinT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">cosT</span><span class="o">*</span><span class="n">cosT</span><span class="p">);</span>
+<span class="w">	</span><span class="kt">float</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">2.0</span><span class="o">*</span><span class="n">M_PI</span><span class="o">*</span><span class="n">Xi</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+<span class="w">	</span><span class="k">return</span>
+<span class="w">		</span><span class="n">T</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">sinT</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span><span class="w"> </span><span class="o">+</span>
+<span class="w">		</span><span class="n">B</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">sinT</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span><span class="w"> </span><span class="o">+</span>
+<span class="w">		</span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w">  </span><span class="n">cosT</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">importanceSampleGGX</span><span class="p">(</span><span class="kt">vec2</span><span class="w"> </span><span class="n">Xi</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">roughness</span><span class="o">*</span><span class="n">roughness</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">cosT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sqrt</span><span class="p">((</span><span class="mf">1.0</span><span class="o">-</span><span class="n">Xi</span><span class="p">.</span><span class="n">y</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0</span><span class="o">+</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">a</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span><span class="o">*</span><span class="n">Xi</span><span class="p">.</span><span class="n">y</span><span class="p">));</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">sinT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">cosT</span><span class="o">*</span><span class="n">cosT</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">2.0</span><span class="o">*</span><span class="n">M_PI</span><span class="o">*</span><span class="n">Xi</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span>
+<span class="w">    </span><span class="n">T</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">sinT</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">B</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">sinT</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span><span class="w"> </span><span class="o">+</span>
+<span class="w">    </span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w">  </span><span class="n">cosT</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">probabilityGGX</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">ndh</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">vdh</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">Roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">normal_distrib</span><span class="p">(</span><span class="n">ndh</span><span class="p">,</span><span class="w"> </span><span class="n">Roughness</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ndh</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mf">4.0</span><span class="o">*</span><span class="n">vdh</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">distortion</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">Wn</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// Computes the inverse of the solid angle of the (differential) pixel in</span>
+<span class="w">  </span><span class="c1">// the cube map pointed at by Wn</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">sinT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">Wn</span><span class="p">.</span><span class="n">y</span><span class="o">*</span><span class="n">Wn</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sinT</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">float</span><span class="w"> </span><span class="n">computeLOD</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">Ln</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">p</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">maxLod</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">log2</span><span class="p">(</span><span class="kt">float</span><span class="p">(</span><span class="n">nbSamples</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">distortion</span><span class="p">(</span><span class="n">Ln</span><span class="p">)));</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Horizon fading trick from <a href="https://marmosetco.tumblr.com/post/81245981087">https://marmosetco.tumblr.com/post/81245981087</a></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">float</span><span class="w"> </span><span class="n">horizonFading</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">horizonFade</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">horiz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clamp</span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">horizonFade</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">horiz</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">horiz</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Compute the lambertian diffuse radiance to the viewer's eye</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">pbrComputeDiffuse</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">normal</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">diffColor</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">envIrradiance</span><span class="p">(</span><span class="n">normal</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">diffColor</span><span class="p">;</span>
+<span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Compute the microfacets specular reflection to the viewer's eye</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kt">vec3</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span>
+<span class="w">   </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F0</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F82</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">float</span><span class="w"> </span><span class="n">occlusion</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">float</span><span class="w"> </span><span class="n">bentNormalSpecularAmount</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">radiance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">ndv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">,</span><span class="w"> </span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Bent normals occlusion</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">occlusionStart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">occlusion</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">occlusionEnd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">occlusion</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">envT</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">tangent</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">envB</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">bitangent</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">envN</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">envE</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">eye</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">envVertexNormal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">vertexNormal</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">vec3</span><span class="w"> </span><span class="n">envBent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worldToEnvSpace</span><span class="p">(</span><span class="n">vectors</span><span class="p">.</span><span class="n">bent</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mo">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">nbSamples</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">vec2</span><span class="w"> </span><span class="n">Xi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fibonacci2DDitheredTemporal</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">nbSamples</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">Hn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">importanceSampleGGX</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span><span class="w"> </span><span class="n">envT</span><span class="p">,</span><span class="w"> </span><span class="n">envB</span><span class="p">,</span><span class="w"> </span><span class="n">envN</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">vec3</span><span class="w"> </span><span class="n">Ln</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">reflect</span><span class="p">(</span><span class="n">envE</span><span class="p">,</span><span class="n">Hn</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">fade</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">horizonFading</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">envVertexNormal</span><span class="p">,</span><span class="w"> </span><span class="n">Ln</span><span class="p">),</span><span class="w"> </span><span class="n">horizonFade</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">bentNormalSpecularAmount</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">envBent</span><span class="p">,</span><span class="w"> </span><span class="n">Ln</span><span class="p">)));</span>
+<span class="w">        </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">smoothstep</span><span class="p">(</span><span class="n">occlusionStart</span><span class="p">,</span><span class="w"> </span><span class="n">occlusionEnd</span><span class="p">,</span><span class="w"> </span><span class="n">mask</span><span class="p">);</span>
+<span class="w">        </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mix</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">specOcclusion</span><span class="p">,</span><span class="w"> </span><span class="n">bentNormalSpecularAmount</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">ndl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">envN</span><span class="p">,</span><span class="w"> </span><span class="n">Ln</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ndl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="w"> </span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="n">ndl</span><span class="w"> </span><span class="p">);</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">vdh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">envE</span><span class="p">,</span><span class="w"> </span><span class="n">Hn</span><span class="p">));</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">ndh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="n">dot</span><span class="p">(</span><span class="n">envN</span><span class="p">,</span><span class="w"> </span><span class="n">Hn</span><span class="p">));</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">lodS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">roughness</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.01</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">computeLOD</span><span class="p">(</span><span class="n">Ln</span><span class="p">,</span><span class="w"> </span><span class="n">probabilityGGX</span><span class="p">(</span><span class="n">ndh</span><span class="p">,</span><span class="w"> </span><span class="n">vdh</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">));</span>
+<span class="w">    </span><span class="n">radiance</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">fade</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">specOcclusion</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">envSample</span><span class="p">(</span><span class="n">Ln</span><span class="p">,</span><span class="w"> </span><span class="n">lodS</span><span class="p">)</span><span class="w"> </span><span class="o">*</span>
+<span class="w">      </span><span class="n">cook_torrance_contrib</span><span class="p">(</span><span class="n">vdh</span><span class="p">,</span><span class="w"> </span><span class="n">ndh</span><span class="p">,</span><span class="w"> </span><span class="n">ndl</span><span class="p">,</span><span class="w"> </span><span class="n">ndv</span><span class="p">,</span><span class="w"> </span><span class="n">F0</span><span class="p">,</span><span class="w"> </span><span class="n">F82</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="c1">// Remove occlusions on shiny reflections</span>
+<span class="w">  </span><span class="n">radiance</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="kt">float</span><span class="p">(</span><span class="n">nbSamples</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">radiance</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span>
+<span class="w">   </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F0</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">vec3</span><span class="w"> </span><span class="n">F82</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="n">F0</span><span class="p">,</span><span class="w"> </span><span class="n">F82</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span>
+<span class="w">   </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">float</span><span class="w"> </span><span class="n">occlusion</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">float</span><span class="w"> </span><span class="n">bentNormalSpecularAmount</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span><span class="w"> </span><span class="n">roughness</span><span class="p">,</span><span class="w"> </span><span class="n">occlusion</span><span class="p">,</span><span class="w"> </span><span class="n">bentNormalSpecularAmount</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">vec3</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span>
+<span class="w">   </span><span class="n">LocalVectors</span><span class="w"> </span><span class="n">vectors</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">vec3</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span>
+<span class="w">   </span><span class="kt">float</span><span class="w"> </span><span class="n">roughness</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">pbrComputeSpecular</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="w"> </span><span class="n">specColor</span><span class="p">,</span><span class="w"> </span><span class="n">roughness</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+
