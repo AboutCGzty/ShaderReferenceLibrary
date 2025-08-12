@@ -1,0 +1,31 @@
+#include "bvhtrace.comp"
+#include "data/shader/common/octpack.sh"
+
+USE_BUFFER(vec4,bRays);
+USE_RAWBUFFER(bCount);
+
+USE_LOADSTORE_BUFFER(vec4,bHits,0);
+
+COMPUTE(64,1,1)
+{
+	uint4 indexLoad = rawLoad4(bCount,0);
+	uint index = (64*indexLoad.y)*DISPATCH_THREAD_ID.y + DISPATCH_THREAD_ID.x;
+	if( index >= indexLoad.x )
+	{ return; }
+
+	vec4 rayLoad = bRays[index];
+	vec3 rayOrigin = rayLoad.xyz;
+	vec3 rayDirection = unpackUnitVectorOct( asuint(rayLoad.w) );
+
+	vec4 writeOut = vec4( asfloat(0xFFFFFFFF), 0.0, 0.0, 0.0 );
+
+	Ray ray = buildRay( rayOrigin, rayDirection );
+	RayHit hit;
+	if( traceRay( GROUP_INDEX, ray, INFINITY, hit ) )
+	{
+		writeOut.x = asfloat( hit.objectIndex );
+		writeOut.y = asfloat( hit.triangleIndex );
+		writeOut.zw = hit.coords.xy;
+	}
+	bHits[index] = writeOut;
+}

@@ -1,0 +1,83 @@
+#ifndef MSET_RAYTRACING_COMMON_COMP
+#define MSET_RAYTRACING_COMMON_COMP
+
+#ifndef MaxLightSamplingCandidates
+#define MaxLightSamplingCandidates 1
+#endif
+
+#include "data/shader/common/const.sh"
+#include "data/shader/common/util.sh"
+#include "data/shader/mat/state.comp"
+#include "data/shader/mat/light.comp"
+
+uniform float	uRayOriginBias;
+uniform uint	uNormalStrict;
+
+#define SAMPLE_DIM_LIGHT	( 0 )
+#define SAMPLE_DIM_BSDF		( (MaxLightSamplingCandidates*4) + 0 )
+#define SAMPLE_DIM_BSSRDF	( (MaxLightSamplingCandidates*4) + 4 )
+
+float safeNdotL( SampleState ss )
+{
+	return uNormalStrict ? dot( ss.Ng, ss.L ) : ss.NdotL;
+}
+
+bool isReflection( SampleState ss )
+{
+	return safeNdotL( ss ) > 0.0;
+}
+
+bool isTransmission( SampleState ss )
+{
+	return safeNdotL( ss ) < 0.0;
+}
+
+//MIS power heuristic (beta=2)
+float misWeight( float pdfA, float pdfB )
+{
+	float pdfA2 = min( pdfA * pdfA, FLT_MAX );
+	float pdfB2 = min( pdfB * pdfB, FLT_MAX );
+	return pdfA2 * rcpSafe( pdfA2 + pdfB2 );
+}
+
+//MIS power heuristic (beta=2) multiplied by 1/pdfA
+float misWeightOverPdf( float pdfA, float pdfB )
+{
+	float pdfA2 = min( pdfA * pdfA, FLT_MAX );
+	float pdfB2 = min( pdfB * pdfB, FLT_MAX );
+	return pdfA * rcpSafe( pdfA2 + pdfB2 );
+}
+
+// compute adjusted ray origin based on reported intersection position and geometric normal
+// see "A Fast and Robust Method for Avoiding Self-Intersection", Ray Tracing Gems, ch.6.
+vec3 rayOriginAdjust( vec3 position, vec3 normal )
+{
+	const float threshold = 1.0 / 32.0;
+	const float scale_f = 1.0 / 65536.0;
+	const float scale_i = 256.0;
+
+	int3 offset_i = int3( normal * scale_i );
+	
+	vec3 position_f = position + scale_f * normal;
+	vec3 position_i = vec3( 
+		asfloat( asint( position.x ) + ( position.x < 0.0 ? -offset_i.x : offset_i.x ) ),
+		asfloat( asint( position.y ) + ( position.y < 0.0 ? -offset_i.y : offset_i.y ) ),
+		asfloat( asint( position.z ) + ( position.z < 0.0 ? -offset_i.z : offset_i.z ) )
+	);
+
+	return vec3(
+		abs(position.x) < threshold ? position_f.x : position_i.x,
+		abs(position.y) < threshold ? position_f.y : position_i.y,
+		abs(position.z) < threshold ? position_f.z : position_i.z
+	);
+}
+
+//adjust sample origin for either reflection or transmission
+vec3 rayOriginAdjust( SampleState ss )
+{
+	vec3 origin = rayOriginAdjust( ss.origin, ss.NdotL < 0.0 ? -ss.Ng : ss.Ng );
+	HINT_FLATTEN if( ss.NdotL > 0.0 ) { origin += ss.basis.N * uRayOriginBias; }
+	return origin;
+}
+
+#endif

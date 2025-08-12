@@ -1,0 +1,48 @@
+#ifndef MSET_RESERVOIR_COMP
+#define MSET_RESERVOIR_COMP
+
+#include "data/shader/mat/state.comp"
+#include "buffers.comp"
+
+struct Reservoir
+{
+	uint3 Lradiance;
+	float distance;
+	float pdfTarget;
+	float W;
+};
+
+Reservoir newReservoir()
+{
+	Reservoir res;
+	res.Lradiance = uint3( 0, 0, 0 );
+	res.distance  = 0.0;
+	res.pdfTarget = 0.0;
+	res.W = 0.0;
+	return res;
+}
+
+void updateReservoir( inout Reservoir res, float r, LightSampleState ls, float pdfTarget, float pdfSource )
+{
+	float weight = pdfTarget * rcpSafe( pdfSource );
+	res.W += weight;
+	if( r * res.W < weight )
+	{
+		res.Lradiance = packVec2x3f( ls.L, ls.radiance );
+		res.distance  = ls.distance;
+		res.pdfTarget = pdfTarget;
+	}
+}
+
+LightSampleState finalizeReservoir( Reservoir res, uint M )
+{
+	float W = rcpSafe( res.pdfTarget * M ) * res.W;
+
+	LightSampleState ls;
+	unpackVec2x3f( res.Lradiance, ls.L, ls.radiance );
+	ls.radiance *= W;
+	ls.distance  = res.distance;
+	return ls;
+}
+
+#endif

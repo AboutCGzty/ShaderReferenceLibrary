@@ -1,0 +1,13 @@
+USE_TEXTURE2D_NOSAMPLER(tInput);
+USE_LOADSTORE_TEXTURE2D(float, uAccumulationBuffer, 0);
+uniform uint uSample;
+
+COMPUTE(8,8,1)
+{
+	vec3 sampleColor = imageLoad(tInput, DISPATCH_THREAD_ID.xy).rgb;
+	if (uSample > 0)
+	{
+		sampleColor = mix(imageLoadRW(uAccumulationBuffer, DISPATCH_THREAD_ID.xy).rgb, sampleColor, 1.0f/float(uSample));
+	}
+    imageStore(uAccumulationBuffer, DISPATCH_THREAD_ID.xy, vec4(sampleColor, 1.0f));
+}

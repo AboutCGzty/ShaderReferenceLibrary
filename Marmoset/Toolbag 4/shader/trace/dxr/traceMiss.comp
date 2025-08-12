@@ -1,0 +1,19 @@
+#if defined(FeatureMissColor)
+	#include "data/shader/scene/raytracing/miss/missColor.comp"
+	#define TraceMiss	missColor
+#endif
+
+#if defined(FeatureMissSky)
+	#include "data/shader/scene/raytracing/miss/missSky.comp"
+	#define TraceMiss	missSky
+#endif
+
+#if defined(FeatureMissSkyBlur)
+	#include "data/shader/scene/raytracing/miss/missSkyBlur.comp"
+	#define	TraceMiss	missSkyBlur
+#endif
+
+#if defined(FeatureMissSkySH)
+	#include "data/shader/scene/raytracing/miss/missSkySH.comp"
+	#define	TraceMiss	missSkySH
+#endif

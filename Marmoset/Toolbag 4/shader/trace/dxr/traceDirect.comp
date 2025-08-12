@@ -1,0 +1,60 @@
+#include "data/shader/scene/raytracing/buffers.comp"
+
+USE_RAWBUFFER(bCounters);
+USE_BUFFER(uint4,bDirectRays);
+USE_ACCELERATION_STRUCTURE(tRootTLAS);
+
+USE_LOADSTORE_BUFFER(uint2,bRadiance,0);
+
+uniform uint uNoiseSeed;
+uniform uint uRTCounterOffset;
+
+#define RayFlags RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH
+#include "traceRay.comp"
+
+COMPUTE(64,1,1)
+{
+    uint2 numRays = rawLoad2( bCounters, uRTCounterOffset );
+	uint id = 64 * numRays.y * DISPATCH_THREAD_ID.y + DISPATCH_THREAD_ID.x;
+    if( id >= numRays.x )
+    { return; }
+
+    uint4 rayData0 = RT_BUFFER0(bDirectRays,id);
+    uint4 rayData1 = RT_BUFFER1(bDirectRays,id);
+
+	RayDesc ray;
+    vec3 rayRadiance;
+    unpackVec2x3f( rayData1.xyz, ray.Direction, rayRadiance );
+    ray.Origin = asfloat(rayData0.xyz);
+	ray.TMin   = 0.0;
+    ray.TMax   = asfloat(rayData1.w);
+
+    uint radianceIndex   = rayData0.w & RT_INDEX_MASK;
+	bool isShadowCatcher = rayData0.w & RT_RAYFLAG_SHADOWCATCHER;
+	bool isOccluded      = false;
+	HINT_BRANCH
+	if( ray.TMax > 0.0 )
+	{
+		RayQueryType q;
+		RayPayload payload;
+		#if defined(FeatureTransparencyDither)
+			payload.rng = rngInit( radianceIndex, uNoiseSeed );
+		#endif
+		q.TraceRayInline( tRootTLAS, 0, RT_RAYTYPE_SECONDARY, ray );
+		isOccluded = traceRay( q, payload );
+	}
+	if( isShadowCatcher )
+	{
+		//shadow catcher: modulate by shadow opacity if occluded
+		float shadowAlpha = rayRadiance.r;
+		float shadowOpacity = saturate( 1.0 - shadowAlpha );
+		if( isOccluded )
+		{ mulPackedVec4fSetW( bRadiance[radianceIndex], shadowOpacity, shadowAlpha ); }
+	}
+	else
+	{
+		//accumulate radiance if unoccluded
+		if( !isOccluded )
+		{ addPackedVec4f( bRadiance[radianceIndex], rayRadiance ); }
+	}
+}

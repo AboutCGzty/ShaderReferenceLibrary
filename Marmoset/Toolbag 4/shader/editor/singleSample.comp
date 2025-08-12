@@ -1,0 +1,16 @@
+#include "../common/util.sh"
+
+USE_INTERLOCKED_BUFFER(rawBuffer, 0);
+
+USE_TEXTURE2D( tTexture );
+uniform vec2	uTexCoord;
+
+COMPUTE(1,1,1)
+{
+	if( DISPATCH_THREAD_ID.x == 0 )
+	{
+		vec4 result = texture2DLod( tTexture, uTexCoord, 0.0 );
+		interlockedStore4( rawBuffer, 0, asuint(result) );
+	}
+}
+

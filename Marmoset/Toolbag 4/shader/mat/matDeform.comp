@@ -1,0 +1,84 @@
+#include "../common/util.sh"
+#include "state.vert"
+
+
+
+USE_INTERLOCKED_BUFFER(rawMeshBuffer, 0);
+
+//base level bind pose - original vertices
+USE_BUFFER(float, bufferPositionsIN);
+USE_BUFFER(uint, bufferTangentsBitangentsNormalsIN);
+USE_BUFFER(float, bufferTexCoordsIN);
+
+//special case for subset of mesh (multiple materials)
+USE_BUFFER(uint, vertexIndicesIN);
+uniform uint	uUseVertexIndices;
+
+
+uniform uint	uNumPositions;
+uniform uint	uTotalVertices;
+
+uniform vec4	uTexCoordScaleBias;
+
+
+vec2 getSrcUV0(uint id)
+{
+	vec2 uv;
+
+	uv.x = bufferTexCoordsIN[(id*2)+0];
+	uv.y = bufferTexCoordsIN[(id*2)+1];
+
+	uv = uv * uTexCoordScaleBias.xy + uTexCoordScaleBias.zw;
+
+	return uv;
+}
+
+vec3 getSrcVertex(uint id)
+{
+	vec3 v;
+	v.x = bufferPositionsIN[(id*3)+0];
+	v.y = bufferPositionsIN[(id*3)+1];
+	v.z = bufferPositionsIN[(id*3)+2];
+	return v;
+}
+
+vec3 unpackVec( uint p )
+{
+	vec3 r;
+	float c = (2.0/1022.0);
+	r.x = float((p      ) & 0x3FF) * c - 1.0;
+	r.y = float((p >> 10) & 0x3FF) * c - 1.0;
+	r.z = float((p >> 20) & 0x3FF) * c - 1.0;
+	return r;
+}
+
+void writePosition(uint vertexIndex, vec3 pos)
+{
+	interlockedStore3( rawMeshBuffer, vertexIndex*8, asuint(pos) );
+}
+
+COMPUTE(256,1,1)
+{
+	uint id = DISPATCH_THREAD_ID.x + (DISPATCH_THREAD_ID.y * 65535);
+	if( id < uNumPositions )
+	{
+		uint vertexIndex = id;
+		if( uUseVertexIndices == 1 )
+		{ vertexIndex = vertexIndicesIN[id]; }
+
+		VertexState s;
+		s.position = getSrcVertex(vertexIndex);
+		
+		s.tangent = unpackVec(bufferTangentsBitangentsNormalsIN[(vertexIndex*3)+0]);
+		s.bitangent = unpackVec(bufferTangentsBitangentsNormalsIN[(vertexIndex*3)+1]);
+		s.normal = unpackVec(bufferTangentsBitangentsNormalsIN[(vertexIndex*3)+2]);
+
+		s.texCoord.xy = getSrcUV0(vertexIndex);
+
+		#ifdef Displacement
+			s.position = Displacement(s);
+		#endif
+		writePosition(vertexIndex, s.position);
+	}
+}
+

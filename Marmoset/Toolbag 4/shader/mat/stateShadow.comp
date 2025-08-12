@@ -1,0 +1,28 @@
+#ifndef MSET_COMP_STATE_SHADOW_H
+#define MSET_COMP_STATE_SHADOW_H
+
+#include "data/shader/common/tangentbasis.sh"
+
+struct FragmentState
+{
+	//inputs
+	vec3	vertexPosition;
+	vec2	vertexTexCoord;
+	vec3	vertexNormal;
+	vec3	vertexTangent;
+	vec3	vertexBitangent;
+	uint2	screenCoord;
+	uint	radianceIndex;
+};
+
+struct SampleState
+{
+	//input
+	vec4            r;
+	vec3			origin;
+	TangentBasis    basis;
+	//output
+	vec3            L;
+};
+
+#endif

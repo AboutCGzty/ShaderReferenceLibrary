@@ -1,0 +1,23 @@
+#include "../../common/util.sh"
+#include "../state.vert"
+
+
+USE_TEXTURE2D(tDisplacementVectorMap);
+
+uniform vec3	uDisplacementScale;
+uniform vec3	uDisplacementBias;
+uniform float   uDisplacementTangentSpace;
+
+
+vec3 DisplacementVector(VertexState s)
+{
+	vec3 disp = texture2DLod( tDisplacementVectorMap, s.texCoord.xy, 0.0 ).xyz;
+	if( uDisplacementTangentSpace > 0.0 )
+	{
+		disp = (disp.x * normalize(s.tangent)) + disp.y * (normalize(s.bitangent)) + (disp.z * normalize(s.normal));
+	}
+	vec3 result = s.position + (uDisplacementScale*disp) + uDisplacementBias;
+	return result;
+}
+
+#define	Displacement	DisplacementVector

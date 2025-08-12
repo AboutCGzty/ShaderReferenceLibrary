@@ -1,0 +1,21 @@
+#define RT_RAYTYPE_PRIMARY		0x02
+#define RT_RAYTYPE_SECONDARY	0x04
+#define RT_RAYTYPE_BAKE			0xFF
+
+struct DXRInstanceData
+{
+	//packed transparency/texcord buffer index:
+	// 2bits : transparency subroutine ID
+	// 10bits: transparency atlas slice
+	// 20bits: texcoord buffer index
+	uint transparency_texcoordBuffer;
+	//BLAS geometry base triangle offset
+	uint triangleOffset;
+};
+
+struct DXRPackedTexCoords
+{
+	//packed fp16:fp16 UV pairs of each vertex
+	uint t0, t1, t2;
+	uint padding;
+};

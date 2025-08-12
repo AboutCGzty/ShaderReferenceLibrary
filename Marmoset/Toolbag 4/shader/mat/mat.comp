@@ -1,0 +1,1178 @@
+#include "../common/const.sh"
+#include "../common/util.sh"
+#include "../common/octpack.sh"
+#include "../common/colorspace.sh"
+#include "../common/ldsampler.comp"
+#include "../scene/raytracing/common.comp"
+#include "../scene/raytracing/buffers.comp"
+#include "../scene/raytracing/reservoir.comp"
+#include "../scene/raytracing/medium/homogenous.comp"
+#include "../scene/raytracing/lights/distantlight.comp"
+#include "../scene/raytracing/lights/pointlight.comp"
+#include "../scene/raytracing/lights/skylight.comp"
+
+#include "state.frag"
+#include "state.comp"
+#include "other/remap.frag"
+
+#if defined(MATERIAL_PASS_RT_PRIMARYHIT) || \
+	defined(MATERIAL_PASS_RT_PRIMARYHIT_RASTER)
+#define RT_PRIMARYHIT
+#endif
+
+#if defined(MATERIAL_PASS_RT_SECONDARYHIT)
+#define RT_SECONDARYHIT
+#endif
+
+uniform uint	uRandomSeed;
+uniform float	uRadianceClamp;
+uniform uint	uTraceReflection;
+uniform uint	uTraceTransmission;
+uniform vec2	uScreenTexCoordScale;
+uniform uint	uRTObjectIndex;
+uniform uint	uRTRadianceStride;
+
+#ifdef RT_PRIMARYHIT
+uniform mat4	uViewMatrix;
+uniform vec4	uLightSpaceCameraPosition;
+uniform float	uDiffuseIntensity;
+uniform float	uReflectionIntensity;
+#endif
+
+#ifdef RT_SECONDARYHIT
+USE_BUFFER(uint4,bInPathState);
+#endif
+
+#if defined(MATERIAL_PASS_RT_PRIMARYHIT) || \
+	defined(MATERIAL_PASS_RT_SECONDARYHIT)
+#define MESH_VERTEX_COLOR
+#include "mesh.comp"
+uniform mat4	uModelLightMatrix;
+uniform mat4	uModelInverseTransposeLightMatrix;
+uniform vec4	uTexCoordScaleBias;
+
+USE_OBJECTINDEXBUFFER(bObjectIndices);
+USE_BUFFER(uint4,bIndirectHits);
+#endif
+
+USE_INTERLOCKED_BUFFER(bCounters,0);
+USE_LOADSTORE_BUFFER(uint4,bLightRays,1);
+USE_LOADSTORE_BUFFER(uint4,bScatteringRays,2);
+USE_LOADSTORE_BUFFER(uint4,bIndirectRays,3);
+USE_LOADSTORE_BUFFER(uint4,bPathState,4);
+USE_LOADSTORE_BUFFER(uint2,bRadiance,5);
+
+#ifdef OutputFeatures
+#define MATERIAL_FEATURE_ALBEDO 0
+#define MATERIAL_FEATURE_NORMAL 1
+USE_LOADSTORE_TEXTURE2DARRAY(float,tFeatures,6);
+
+vec3	computeMaterialAlbedo( FragmentState fs, SampleState ss )
+{
+	//BSDF stack albedo
+	return	ss.reflectionWeightSecondary * fs.reflectivitySecondary
+			+ ss.reflectionWeight * fs.reflectivity
+			+ ss.diffusionWeight * fs.baseColor
+		#ifdef TransmissionSubsurface
+			+ ss.transmissionWeight * fs.baseColor;
+		#else
+			+ ss.transmissionWeight * fs.transmissivity;
+		#endif
+}
+
+void	storeFeatures( vec3 albedo, FragmentState fs, SampleState ss )
+{
+	//view space normal
+	vec3 normal = mulVec( uViewMatrix, fs.normal );
+	normal = 0.5 * normal + vec3(0.5,0.5,0.5);
+	imageStoreArray( tFeatures, fs.screenCoord, MATERIAL_FEATURE_ALBEDO, vec4( albedo, 0.0 ) );
+	imageStoreArray( tFeatures, fs.screenCoord, MATERIAL_FEATURE_NORMAL, vec4( normal, 0.0 ) );
+}
+#endif
+
+#ifdef RT_DEBUG
+	#ifdef RT_PRIMARYHIT
+		USE_LOADSTORE_TEXTURE2D(float,tDebug,7);
+	#endif
+	#ifdef RT_SECONDARYHIT
+		USE_LOADSTORE_TEXTURE2D(float,tDebug,6);
+	#endif
+#endif
+
+void	evaluateBSDF( PathState path, FragmentState fs, inout SampleState ss )
+{
+#ifdef TransmissionSubsurface
+	if( !path.isSubsurface )
+#endif
+	{
+		#ifdef ReflectionEvaluateSecondary
+			ReflectionEvaluateSecondary( fs, ss );
+		#endif
+		#ifdef ReflectionEvaluate
+			ReflectionEvaluate( fs, ss );
+		#endif
+		#ifdef DiffusionEvaluate
+			DiffusionEvaluate( fs, ss );
+		#endif
+	}
+	#ifdef TransmissionEvaluate
+		TransmissionEvaluate( fs, ss );
+	#endif
+}
+
+vec3	sampleBSDF( PathState path, FragmentState fs, inout SampleState ss )
+{
+	float pCoatReflection	= ss.reflectionWeightSecondary;
+	float pReflection		= ss.reflectionWeight;
+	float pDiffusion		= ss.diffusionWeight;
+
+	bool  sampledBRDF = false;
+
+	#ifdef ReflectionSampleSecondary
+		if( ss.r.w < pCoatReflection )
+		{
+			ReflectionSampleSecondary( fs, ss );
+			sampledBRDF = true;
+		}
+		else
+		{
+			pReflection /= ss.reflectionWeight + ss.diffusionWeight + ss.transmissionWeight;
+			ss.r.w = ( ss.r.w - pCoatReflection ) / ( 1.0 - pCoatReflection ); //reuse random sample
+		}
+	#endif
+	#ifdef ReflectionSample
+		if( !sampledBRDF && ss.r.w < pReflection )
+		{
+			ReflectionSample( fs, ss );
+			sampledBRDF = true;
+		}
+		else
+		{
+			pDiffusion /= ss.diffusionWeight + ss.transmissionWeight;
+		}
+	#endif
+	#ifdef DiffusionSample
+		if( !sampledBRDF && ss.r.z < pDiffusion )
+		{
+			DiffusionSample( fs, ss );
+			sampledBRDF = true;
+		}
+	#endif
+	#ifdef TransmissionSample
+		if( !sampledBRDF )
+		{
+			TransmissionSample( fs, ss );
+		}
+	#endif
+
+	//evaluate BSDF stack for sampled direction
+	evaluateBSDF( path, fs, ss );
+	return ss.bsdf;
+}
+
+float	evaluateLights( FragmentState fs, SampleState ss, out vec3 radiance, out vec3 radianceUnshadowed )
+{
+	LightSampleState ls;
+	ls.L		= ss.L;
+	ls.radiance = vec3(0.0, 0.0, 0.0);
+	ls.distance = INFINITY;
+	ls.pdf		= 0.0;
+
+	radiance = vec3(0.0, 0.0, 0.0);
+	radianceUnshadowed = vec3(0.0, 0.0, 0.0);
+	
+	float pdfChooseSky = uLightChoosePDF.x;
+	float pdfChooseDynamic = uLightChoosePDF.y;
+
+#ifdef SceneHasAreaLights
+	//trace and evaluate omni & spot lights
+	for( int i=0; i<uLightCountPoint; ++i )
+	{
+		bool hasArea = i<32 ? uLightAreaMask.x & ( 1u<<i )
+							: uLightAreaMask.y & ( 1u<<(i-32) );
+		if( hasArea )
+		{
+			LightParams lp = computePointLightParams( i, ss.origin );
+			float peval = saturate( maxcomp( lp.color ) ); //probability of evaluation given fade factors
+			if( ss.raux < peval )
+			{
+				peval = rcp( peval );
+				ss.raux  *= peval; //reuse random number
+				lp.color *= peval;
+				evaluateLight_Point( lp, ss.origin, abs(ls.distance), ls );
+			}
+			else
+			{
+				//reuse random number
+				ss.raux = ( ss.raux - peval ) * rcp( 1.0 - peval );
+			}
+		}
+	}
+
+	//hit light
+	if( ls.distance < INFINITY )
+	{
+		HINT_FLATTEN if( ls.pdf > 0.0 )
+		{
+			ls.pdf *= pdfChooseDynamic;
+			vec3 radiancePoint = ls.radiance * misWeightOverPdf( ss.pdf, ls.pdf );
+			HINT_FLATTEN
+			if( ls.distance >= 0.0 ) { radiance += radiancePoint; }
+			else { radianceUnshadowed += radiancePoint; }
+		}
+	}
+	else
+#endif
+	{
+	#ifdef SceneHasSkyLight
+		//evaluate sky light
+		{
+			evaluateLight_Sky( ls );
+			HINT_FLATTEN if( ls.pdf > 0.0 )
+			{
+				ls.pdf  *= pdfChooseSky;
+				radiance = ls.radiance * fs.skyOcclusion * misWeightOverPdf( ss.pdf, ls.pdf );
+			}
+		}
+	#endif
+	#ifdef SceneHasDistantLights
+		//evaluate all distant lights
+		for( int i=uLightCountPoint; i<uLightCountTotal; ++i )
+		{
+			LightParams lp = computeDistantLightParams( i, ss.origin );
+			evaluateLight_Distant( lp, ls );
+			HINT_FLATTEN if( ls.pdf > 0.0 )
+			{
+				ls.pdf *= pdfChooseDynamic;
+				vec3 radianceDistant = ls.radiance * misWeightOverPdf( ss.pdf, ls.pdf );
+				HINT_FLATTEN
+				if( lp.castShadows ) { radiance += radianceDistant; }
+				else { radianceUnshadowed += radianceDistant; }
+			}
+		}
+	#endif
+	}
+
+	return abs( ls.distance );
+}
+
+LightSampleState sampleLightsCandidate( PathState path, FragmentState fs, SampleState ss, int lightIndex )
+{
+	LightSampleState ls;
+	ls.L		 = vec3(0.0, 0.0, 0.0);
+	ls.radiance	 = vec3(0.0, 0.0, 0.0);
+	ls.distance	 = INFINITY;
+	ls.shadow	 = 1.0;
+	ls.pdf		 = 0.0;
+	ls.pdfChoose = 0.0;
+
+	float pdfChooseSky = uLightChoosePDF.x;
+	float pdfChooseDynamic = uLightChoosePDF.y;
+
+#ifdef SceneHasSkyLight
+	HINT_BRANCH
+	if( lightIndex == LS_INDEX_SKY )
+	{
+		//sky light
+		sampleLight_Sky( ss.r.xy, ls );
+		ls.radiance *= fs.skyOcclusion;
+		ls.pdfChoose = pdfChooseSky;
+	}
+	else
+#endif
+	{
+		//dynamic light
+		HINT_FLATTEN
+		if( lightIndex < 0 )
+		{
+			//no light index provided; choose one at random
+			lightIndex = clamp( int(ss.r.z * uLightCountTotal), 0, uLightCountTotal-1 );
+		}
+		ls.pdfChoose = pdfChooseDynamic;
+		
+		if( lightIndex < uLightCountPoint )
+		{
+		#ifdef SceneHasPointLights
+			LightParams lp = computePointLightParams( lightIndex, ss.origin );
+			sampleLight_Point( lp, ss.r.xy, ss.origin, ls );
+			ls.shadow = lp.fade;
+		#endif
+		}
+		else
+		{
+		#ifdef SceneHasDistantLights
+			LightParams lp = computeDistantLightParams( lightIndex, ss.origin );
+			sampleLight_Distant( lp, ss.r.xy, ls );
+		#endif
+		}
+	}
+
+	ss.L	 = ls.L;
+	ss.NdotL = dot( ss.L, ss.basis.N );
+
+#ifdef ShadowCatcher
+	//sampling for a shadow catcher: compute shadow opacity
+	float radianceFade = saturate( maxcomp(ls.radiance) * (1.0/0.05) );
+	ls.shadow *= (radianceFade * radianceFade) * (ss.NdotL > 0.0 ? 1.0 : 0.0);
+#endif
+
+#ifndef TransmissionThinSurface
+	HINT_FLATTEN
+	if( isTransmission(ss) )
+	{
+		ss.H = -normalize( ss.L + fs.eta * ss.V );
+		HINT_FLATTEN if( dot( ss.basis.N, ss.H ) < 0.0 )
+		{ ss.H = -ss.H; }
+	}
+	else
+#endif
+	{
+		ss.H = normalize( ss.L + ss.V );
+	}
+
+	//evaluate BSDF stack for sampled direction
+	evaluateBSDF( path, fs, ss );
+
+#ifdef AdvancedLightSampling
+	//don't divide by pdfChoose for RIS estimator but incorporate it into MIS weight ~ms
+	float weight = ls.pdf >= 0.0 ? misWeight( ls.pdf * ls.pdfChoose, ss.pdf ) * rcpSafe( ls.pdf ) : 1.0;
+#else
+	ls.pdf *= ls.pdfChoose;
+	float weight = ls.pdf >= 0.0 ? misWeightOverPdf( ls.pdf, ss.pdf ) : rcpSafe( abs(ls.pdf) );
+#endif
+
+	//final light sample contribution
+	ls.radiance *= ss.bsdf * weight;
+	return ls;
+}
+
+vec3	sampleLights( inout PathState path, FragmentState fs, inout SampleState ss, out float distance )
+{
+	ss.r = ldsRandVec4( path.rng, fs.screenCoord, SAMPLE_DIM_LIGHT );
+
+	uint numSkySamples = 0;
+#ifdef SceneHasSkyLight
+	{
+		//determine number of skylight samples ahead of time in order to perform skylight sampling before dynamic light sampling
+		//this reduces execution divergence and improves performance of AdvancedLightSampling path. ~ms
+		float pdfChooseSky = uLightChoosePDF.x;
+		for( uint s=0; s < MaxLightSamplingCandidates; ++s )
+		{
+			if( ss.r.w < pdfChooseSky )
+			{ numSkySamples++; }
+			ss.r.w = rngNextFloat( path.rng );
+		}
+	}
+#endif
+
+#ifdef AdvancedLightSampling
+	//streaming resampled importance sampling with M=8 candidate light sources
+	//see "Spatiotemporal reservoir resampling for real-time ray tracing with dynamic direct lighting", B. Bitterli et al.
+	Reservoir res = newReservoir();
+	for( uint s=0; s < MaxLightSamplingCandidates; ++s )
+	{
+		if( s > 0 )
+		{ ss.r = ldsRandVec4( path.rng, fs.screenCoord, SAMPLE_DIM_LIGHT + 4*s ); }
+
+		bool sampleSky = numSkySamples > s;
+		int lightIndex = sampleSky ? LS_INDEX_SKY : LS_INDEX_RANDOM;
+		LightSampleState ls = sampleLightsCandidate( path, fs, ss, lightIndex );
+
+		float pdfSource = ls.pdfChoose;
+		float pdfTarget = luminance( ls.radiance );
+		updateReservoir( res, ss.r.w, ls, pdfTarget, pdfSource );
+	}
+	LightSampleState ls = finalizeReservoir( res, MaxLightSamplingCandidates );
+#else
+	//uniformly sample single light source
+	bool sampleSky = numSkySamples > 0;
+	int lightIndex = sampleSky ? LS_INDEX_SKY : LS_INDEX_RANDOM;
+	LightSampleState ls = sampleLightsCandidate( path, fs, ss, lightIndex );
+#endif
+	
+	ss.L      = ls.L;
+	ss.NdotL  = dot( ss.L, ss.basis.N );
+	ss.shadow = ls.shadow;
+	distance  = ls.distance;
+	return ls.radiance;
+}
+
+void	evaluate( FragmentState state, PathState path )
+{
+	//initialize state
+	state.sampleCoverage = 0xFFFFFFFF;
+	state.instanceID = 0;
+	state.frontFacing = true;
+	state.albedo = vec4(1.0,1.0,1.0,1.0);
+	state.baseColor = state.albedo.rgb;
+	state.gloss = 0.0;
+	state.glossSecondary = 0.0;
+	state.displacement = 0.0;
+	state.curvature = 0.0;
+	state.reflectivity = vec3(0.0,0.0,0.0);
+	state.reflectivitySecondary = vec3(0.0,0.0,0.0);
+	state.fresnel = vec3(1.0,1.0,1.0);
+	state.fresnelSecondary = vec3(1.0,1.0,1.0);
+	state.sheen = vec3(0.0,0.0,0.0);
+	state.sheenRoughness = 0.0;
+	state.fuzz = vec3(0.0,0.0,0.0);
+	state.fuzzGlossMask = false;
+	state.transmissivity = vec3(0.0,0.0,0.0);
+	state.thinScatter = 0.0;
+	state.eta = MAT_DEFAULT_ETA;
+	state.etaSecondary = MAT_DEFAULT_ETA;
+	state.metalness = 0.0;
+	state.emissiveLight = vec3(0.0,0.0,0.0);
+	state.diffusion = 1.0;
+	state.skyOcclusion = 1.0;
+	state.reflectionOcclusion = 1.0;
+	state.scatterDepth = vec3(0.0,0.0,0.0);
+	state.scatterColor = vec3(1.0,1.0,1.0);
+	state.anisoTangent = vec3(0.0,1.0,0.0);
+	state.shadowCatcherIndirect = false;
+
+	state.generic0 =
+	state.generic1 =
+	state.generic2 =
+	state.generic3 = vec4(0.0,0.0,0.0,0.0);
+	state.output0 =
+	state.output1 =
+	state.output2 =
+	state.output3 =
+	state.output4 =
+	state.output5 =
+	state.output6 =
+	state.output7 = vec4(0.0,0.0,0.0,1.0);
+
+	//NOTE: transmitting via Burley SSS multiple times has little benefit and causes variance spikes
+	//disallow sampling it after first diffuse bounce to avoid firefly noise
+	state.allowSubsurfaceDiffusion = !path.isDiffuse;
+
+	//initialize interior medium state
+	state.mediumExtinction = vec3(0.0,0.0,0.0);
+	state.mediumScatter = vec3(0.0,0.0,0.0);
+	state.mediumAnisotropy = 0.0;
+
+	//evaluate surface material
+	#ifdef Premerge
+		Premerge(state);
+	#endif
+	#ifdef Surface
+		Surface(state);
+	#endif
+	#ifdef Albedo
+		Albedo(state);
+	#endif
+	#ifdef Medium
+		Medium(state);
+	#endif
+	#ifdef Microsurface
+		Microsurface(state);
+	#endif
+	#ifdef Sheen
+		Sheen(state);
+	#endif
+	#ifdef Reflectivity
+		Reflectivity(state);
+	#endif
+	#ifdef ReflectionAdjust
+		ReflectionAdjust(state);
+	#endif
+	#ifdef MicrosurfaceSecondary
+		MicrosurfaceSecondary(state);
+	#endif
+	#ifdef ReflectivitySecondary
+		ReflectivitySecondary(state);
+	#endif
+	#ifdef ReflectionAdjustSecondary
+		ReflectionAdjustSecondary(state);
+	#endif
+	#ifdef Transmissivity
+		Transmissivity(state);
+	#endif
+	#ifdef Occlusion
+		Occlusion(state);
+	#endif
+	#ifdef Cavity
+		Cavity(state);
+	#endif
+	#ifdef Emissive
+		Emissive(state);
+	#endif
+	#ifdef Transparency
+		Transparency(state);
+	#endif
+	#ifdef Merge
+		Merge(state);
+	#endif
+
+#ifdef ShadowCatcher
+	//set emission equal to shadow catcher color so that it's written to radiance buffer on primary hit
+	vec3 emission = state.baseColor;
+#else
+	vec3 emission = min( state.output0.rgb * path.throughput, vec3(uRadianceClamp, uRadianceClamp, uRadianceClamp) );
+#endif
+	
+	//update path radiance due to self-illumination
+#ifdef RT_SECONDARYHIT
+	if( any(emission) && !path.isSubsurface )
+#endif
+	{
+		addPackedVec4f( path.radiance, emission );
+		bRadiance[path.radianceIndex] = path.radiance;
+	}
+
+#ifdef RT_SECONDARYHIT
+	{
+		//determine face orientation
+		state.frontFacing = dot( state.geometricNormal, state.vertexEye ) >= 0.0;
+	#ifdef TransmissionSubsurfaceDiffusion
+		//assume front facing when exiting via subsurface diffusion since in this case we don't have a meaningful view direction
+		HINT_FLATTEN if( path.isSubsurface )
+		{ state.frontFacing = true; }
+	#endif
+
+		//flip normal if triangle is backfacing w.r.t. ray
+		if( !state.frontFacing )
+		{
+			state.normal 		  = -state.normal;
+			state.vertexNormal	  = -state.vertexNormal;
+			state.geometricNormal = -state.geometricNormal;
+		#ifndef TransmissionThinSurface
+			//invert eta since we're exiting into scene medium
+			state.eta	 	   	  = rcp( state.eta );
+			state.etaSecondary	  = rcp( state.etaSecondary );
+		#endif
+		}
+	}
+#endif
+
+#ifdef SurfaceNormalAdjust
+	//adjust shading normal so that reflection vector is always valid
+	//NOTE: this must be done after flipping the normal due to backface hit so that it works for transmission
+	SurfaceNormalAdjust(state);
+#endif
+
+	//clamp current path gloss to avoid taking caustic paths
+	#ifdef ClampPathGloss
+		state.gloss = min( state.gloss, path.maxGloss );
+		#ifdef ReflectionSampleSecondary
+			state.glossSecondary = min( state.glossSecondary, path.maxGloss );
+			path.maxGloss = min( path.maxGloss, min( state.gloss, state.glossSecondary ) );
+		#else
+			path.maxGloss = min( path.maxGloss, state.gloss );
+		#endif
+	#endif
+	
+	//next path segment sample state
+	SampleState ss;
+	ss.origin			= state.vertexPosition;
+	ss.basis			= createTangentBasis( state.normal, state.vertexTangent );
+	ss.V				= state.vertexEye;
+	ss.Ng				= state.geometricNormal;
+	ss.NdotV			= dot( state.normal, state.vertexEye );
+	ss.flagSubsurface	= path.isSubsurface; //inherit from path flag
+	ss.flagDiffuse		= false;
+	ss.shadow			= 1.0;
+
+	//compute sampling weights
+#ifdef TransmissionSubsurface
+	if( path.isSubsurface )
+	{
+		//exiting via subsurface; enforce diffuse transmission into the scene
+		ss.reflectionWeightSecondary = 0.0;
+		ss.reflectionWeight = 0.0;
+		ss.diffusionWeight = 0.0;
+		ss.transmissionWeight = 1.0;
+	}
+	else if( !state.frontFacing )
+	{
+		//hit back face of subsurface material while not currently sampling BSSRDF
+		//terminate path as we don't support nested mediums
+		return;
+	}
+	else
+#endif
+	{
+		//calculate Fresnel reflectance of the topmost specular layer
+		vec3  Fcoat = vec3( 0.0, 0.0, 0.0 );
+		float lumReflectionCoat = 0.0;
+		#ifdef ReflectionSampleSecondary
+			Fcoat = fresnelSchlick( state.reflectivitySecondary, state.fresnelSecondary, ss.NdotV, state.etaSecondary );
+			lumReflectionCoat = luminance( Fcoat.rgb ) * state.reflectionOcclusion;
+		#endif
+
+		//calculate Fresnel reflectance of the base specular layer
+		vec3  F = vec3( 0.0, 0.0, 0.0 );
+		float lumReflection = 0.0;
+		#ifdef ReflectionSample
+			F = fresnelSchlick( state.reflectivity, state.fresnel, ss.NdotV, state.eta );
+			lumReflection = luminance( F * oneminus(Fcoat) ) * state.reflectionOcclusion;
+		#endif
+
+		float lumDiffusion = 0.0;
+		#ifdef DiffusionSample
+			lumDiffusion = luminance( state.albedo.rgb );
+		#endif
+
+		float lumTransmission = 0.0;
+		#ifdef TransmissionSample
+			#ifdef TransmissionSubsurface
+				lumTransmission	= state.transmissivity.r;
+			#else
+				lumTransmission	= luminance( state.transmissivity * oneminus(F) * oneminus(Fcoat) );
+			#endif
+		#endif
+
+		float totalLuminance	= lumReflectionCoat + lumReflection + lumDiffusion + lumTransmission;
+		float invTotalLuminance	= totalLuminance > 0.0 ? rcp( totalLuminance ) : 0.0;
+
+		ss.reflectionWeightSecondary = lumReflectionCoat * invTotalLuminance;
+		ss.reflectionWeight			 = lumReflection * invTotalLuminance;
+		ss.diffusionWeight			 = lumDiffusion * invTotalLuminance;
+		ss.transmissionWeight		 = lumTransmission * invTotalLuminance;
+	}
+
+#ifdef RT_PRIMARYHIT
+	{
+		#ifdef OutputFeatures
+			//output auxiliary denoising features
+			#if defined(Unlit)
+				storeFeatures( state.albedo.rgb, state, ss );
+			#elif defined(ShadowCatcher)
+				storeFeatures( linearTosRGB( state.baseColor ), state, ss );
+			#else
+				vec3 materialAlbedo = computeMaterialAlbedo( state, ss );
+				storeFeatures( materialAlbedo, state, ss );
+			#endif
+		#endif
+		
+		#ifdef Unlit
+			//skip shading for unlit materials
+			return;
+		#endif
+		
+		//apply reflection intensity modifier
+		state.reflectionOcclusion *= uReflectionIntensity;
+		#ifdef TransmissionRefraction
+			//reflection intensity also applies to refraction
+			state.transmissivity *= uReflectionIntensity;
+		#endif
+	}
+#endif
+
+#ifdef TransmissionSubsurfaceDiffusion
+	if( path.isSubsurface )
+	{
+		//finalize diffusion BSSRDF sampling
+		uint hitCount = path.subsurfaceHitCountAxis >> 16;
+		uint subsurfaceAxis = path.subsurfaceHitCountAxis & 3;
+		vec3 subsurfaceNormal = unpackUnitVectorOct( path.subsurfaceNormal );
+		vec3 subsurfaceWeight = evaluateBSSRDF_BurleyDiffusionPosition( ss, state.baseColor, state.scatterDepth,
+			path.subsurfaceOrigin, subsurfaceNormal, path.subsurfaceRadius, subsurfaceAxis, hitCount );
+		path.throughput *= subsurfaceWeight;
+	}
+#endif
+
+	//light sampling
+	{
+		//initialize sample state
+		ss.L	 = vec3( 0.0, 0.0, 0.0 );
+		ss.H	 = vec3( 0.0, 0.0, 0.0 );
+		ss.NdotL = 0.0;
+		ss.Tin	 = vec3( 1.0, 1.0, 1.0 );
+		ss.Tout	 = vec3( 1.0, 1.0, 1.0 );
+		ss.bsdf	 = vec3( 0.0, 0.0, 0.0 );
+		ss.pdf	 = 0.0;
+
+		//sample light source and evaluate incoming radiance
+		float distanceToLight;
+		vec3  radianceLight = sampleLights( path, state, ss, distanceToLight );
+
+		//apply path throughput
+		radianceLight *= path.throughput;
+
+		//get medium properties on the side of sampled direction
+		vec3 mediumExtinction = vec3( 0.0, 0.0, 0.0 );
+		vec3 mediumScatter = vec3( 0.0, 0.0, 0.0 );
+		#ifdef TrackMediumExtinction
+			mediumExtinction = isTransmission( ss ) ? getMediumExtinction( state ) : path.mediumExtinction;
+		#endif
+		#ifdef TrackMediumScatter
+			mediumScatter = isTransmission( ss ) ? getMediumScatter( state ) : path.mediumScatter;
+		#endif
+
+		HINT_FLATTEN
+	#if defined(TransmissionSubsurfaceDiffusion) || defined(TransmissionPassthrough)
+		//skip direct light shadow ray if transmitting via diffusion BSSRDF or via passthrough
+		if( isTransmission(ss) )
+	#else
+		//direct light shadow rays can't do volumetric scattering (yet)
+		if( any(mediumScatter) )
+	#endif
+		{
+			//invalidate sample
+			radianceLight = vec3( 0.0, 0.0, 0.0 );
+		}
+		else if( any(mediumExtinction) )
+		{
+			//non-scattering medium; apply transmittance
+			vec3 transmittance = exp( -mediumExtinction * distanceToLight );
+			radianceLight *= transmittance;
+		}
+
+		//clamp sample contribution
+		radianceLight = min( radianceLight, vec3(uRadianceClamp, uRadianceClamp, uRadianceClamp) );
+
+		//direct lighting ray
+		vec3 rayOrigin	  = rayOriginAdjust( ss );
+		vec3 rayDirection = ss.L;
+		uint rayFlags	  = 0;
+
+	#ifdef ShadowCatcher
+		//encode shadow opacity in light radiance
+		radianceLight = vec3( ss.shadow, 0.0, 0.0 );
+		rayFlags 	 |= RT_RAYFLAG_SHADOWCATCHER;
+	#endif
+
+		//push new light trace payload
+		if( any(radianceLight) )
+		{
+			uint index;
+			interlockedAdd( bCounters, RT_COUNTER_LIGHTRAYS, 1, index );
+			RT_BUFFER0(bLightRays,index) = uint4( asuint(rayOrigin), rayFlags | path.radianceIndex );
+			RT_BUFFER1(bLightRays,index) = uint4( packVec2x3f(rayDirection, radianceLight), asuint(distanceToLight) );
+		}
+	}
+
+	//BSDF sampling
+	{
+		//initialize sample state
+		ss.r	 = ldsRandVec4( path.rng, state.screenCoord, SAMPLE_DIM_BSDF );
+		ss.raux  = rngNextFloat( path.rng );
+		ss.L	 = vec3( 0.0, 0.0, 0.0 );
+		ss.H	 = vec3( 0.0, 0.0, 0.0 );
+		ss.NdotL = 0.0;
+		ss.Tin	 = vec3( 1.0, 1.0, 1.0 );
+		ss.Tout	 = vec3( 1.0, 1.0, 1.0 );
+		ss.bsdf	 = vec3( 0.0, 0.0, 0.0 );
+		ss.pdf	 = 0.0;
+
+		//sample BSDF stack and update path throughput
+		path.throughput *= sampleBSDF( path, state, ss );
+
+		//update path flags
+		path.isTransmission = path.isTransmission || isTransmission( ss );
+		path.isDiffuse		= path.isDiffuse || ss.flagDiffuse;
+	#ifdef TransmissionSubsurfaceScatter
+		path.isSubsurface	= state.frontFacing && isTransmission( ss );
+	#else
+		path.isSubsurface	= false;
+	#endif
+
+	#ifdef TransmissionSubsurfaceDiffusion
+		//handle subsurface diffusion as a special case
+		if( isTransmission( ss ) )
+		{
+			//divide path throughput by sampled BSDF pdf
+			path.throughput *= ss.pdf > 0.0 ? rcp( ss.pdf ) : 0.0;
+			#ifdef TransparencyHasAlpha
+				//sampling subsurface is less likely to succeed for fractional alpha since it needs two intersections (entry & exit)
+				//divide path throughput by alpha value to make sample proportionally more significant so that the estimator balances out
+				path.throughput *= rcp( state.albedo.a );
+			#endif
+			
+			ss.r = ldsRandVec4( path.rng, state.screenCoord, SAMPLE_DIM_BSSRDF );
+
+			uint  rayAxis;
+			float rayMaxT;
+			vec3  subsurfaceOrigin = ss.origin;
+			float subsurfaceRadius = sampleBSSRDF_BurleyDiffusionPosition( ss, state.scatterDepth, rayAxis, rayMaxT );
+			if( uTraceTransmission && any(path.throughput) && subsurfaceRadius > 0.0 )
+			{
+				uint subsurfaceNormal = packUnitVectorOct( ss.basis.N );
+
+				//encode path state
+				uint4 pathState = uint4( asuint(path.throughput), f32tof16(path.maxGloss) );
+				pathState.x |= RT_PATHFLAG_BIT; //set transmission bit
+				pathState.w |= f32tof16(subsurfaceRadius) << 16;
+				//encode subsurface axis in two fp16 sign bits
+				pathState.w |= ( rayAxis == 1 ) ? 0x8000 : 0;
+				pathState.w |= ( rayAxis == 2 ) ? 0x80000000 : 0;
+
+				uint index;
+				interlockedAdd( bCounters, RT_COUNTER_INDIRECTRAYS, 1, index );
+				RT_BUFFER0(bIndirectRays,index)  = uint4( asuint(ss.origin), RT_RAYFLAG_SUBSURFACE | path.radianceIndex );
+				RT_BUFFER1(bIndirectRays,index)  = uint4( packVec3f(ss.L), asuint(rayMaxT), uRTObjectIndex );
+				RT_BUFFER0(bPathState,index)	 = pathState;
+				RT_BUFFER1(bPathState,index)	 = uint4( asuint(subsurfaceOrigin), subsurfaceNormal );
+			}
+			return;
+		}
+	#else
+		//account for change of medium
+		if( isTransmission( ss ) )
+		{
+			#ifdef TrackMediumExtinction
+				path.mediumExtinction = getMediumExtinction( state );
+			#endif
+			#ifdef TrackMediumScatter
+				path.mediumScatter	  = getMediumScatter( state );
+				path.mediumAnisotropy = getMediumAnisotropy( state );
+			#endif
+		}
+	#endif
+
+		//MIS light contribution (non-volumetric rays only)
+		vec3  radianceScattering = vec3( 0.0, 0.0, 0.0 );
+		float distanceToLight = 0.0;
+		if( !any(path.mediumScatter) )
+		{
+			//trace BSDF sample ray against light sources and evaluate incoming radiance
+			vec3 radianceUnshadowed;
+			distanceToLight = evaluateLights( state, ss, radianceScattering, radianceUnshadowed );
+
+			//apply updated path throughput
+			radianceScattering *= path.throughput;
+			radianceUnshadowed *= path.throughput;
+
+			//apply new medium transmittance
+			HINT_FLATTEN if( any(path.mediumExtinction) )
+			{
+				vec3 transmittance = exp( -path.mediumExtinction * distanceToLight );
+				radianceScattering *= transmittance;
+				radianceUnshadowed *= transmittance;
+			}
+
+			//clamp sample contribution
+			radianceScattering = min( radianceScattering, vec3(uRadianceClamp, uRadianceClamp, uRadianceClamp) );
+			radianceUnshadowed = min( radianceUnshadowed, vec3(uRadianceClamp, uRadianceClamp, uRadianceClamp) );
+
+		#if defined(SceneHasLightsNotCastingShadows) && !defined(ShadowCatcher)
+			//update path radiance
+			if( any(radianceUnshadowed) )
+			{
+				addPackedVec4f( path.radiance, radianceUnshadowed );
+				bRadiance[path.radianceIndex] = path.radiance;
+			}
+		#endif
+		}
+		
+		//divide path throughput by sampled BSDF pdf
+		path.throughput *= ss.pdf > 0.0 ? rcp( ss.pdf ) : 0.0;
+	
+	#ifdef RT_PRIMARYHIT
+		//apply diffuse intensity modifier
+		HINT_FLATTEN if( path.isDiffuse && isReflection( ss ) )
+		{ path.throughput *= uDiffuseIntensity; }
+	#endif
+
+		//indirect/BSDF ray
+		vec3 rayOrigin	  = rayOriginAdjust( ss );
+		vec3 rayDirection = ss.L;
+		uint rayFlags	  = 0;
+	#ifdef ShadowCatcher
+		//zero scattering radiance; we don't need to trace MIS rays for shadow catchers
+		radianceScattering = vec3( 0.0, 0.0, 0.0 );
+		rayFlags 	      |= RT_RAYFLAG_SHADOWCATCHER;
+	#endif
+
+		//determine if path should be continued
+		bool traceIndirect = path.isTransmission ? uTraceTransmission : uTraceReflection;
+	#ifdef ShadowCatcher
+		HINT_FLATTEN if( !state.shadowCatcherIndirect )
+		{
+			//shadow catcher shouldn't receive indirect shadow; terminate path
+			traceIndirect = false;
+		}
+	#endif
+	#ifdef TransmissionSubsurfaceScatter
+		HINT_FLATTEN if( path.isSubsurface && !any( path.mediumScatter ) )
+		{
+			//subsurface albedo is black; terminate path
+			traceIndirect = false;
+		}
+	#endif
+		if( traceIndirect && any(path.throughput) )
+		{
+			//determine next bounce properties
+			bool isMedium	  	 = any( path.mediumExtinction );
+			bool isMediumScatter = any( path.mediumScatter );
+
+			//encode path state
+			uint4 pathState = uint4( asuint(path.throughput), f32tof16(path.maxGloss) );
+			pathState.x |= path.isTransmission ? RT_PATHFLAG_BIT : 0;
+			pathState.y |= path.isDiffuse ? RT_PATHFLAG_BIT : 0;
+
+			//additional indirect ray flags
+			rayFlags |= isMedium ? RT_RAYFLAG_MEDIUM : 0;
+			rayFlags |= isMediumScatter ? RT_RAYFLAG_MEDIUMSCATTER : 0;
+			#ifdef TransmissionSubsurfaceScatter
+				rayFlags |= path.isSubsurface ? RT_RAYFLAG_SUBSURFACE : 0;
+			#endif
+
+			//object index for intersection filtering (~0 means no filter)
+			uint rayObjectIndex = ~uint(0);
+			#ifdef TransmissionSubsurfaceScatter
+				rayObjectIndex = uRTObjectIndex;
+			#endif
+
+			uint4 indirectRayData1;
+			//either packed ray direction and MIS radiance contribution or unpacked ray direction only for volumetric scattering
+			indirectRayData1.xyz = isMediumScatter ? asuint(rayDirection) : packVec2x3f(rayDirection, radianceScattering);
+			//either distance to light for determining MIS occlusion or object index for volumetric scattering
+			indirectRayData1.w   = isMediumScatter ? rayObjectIndex : asuint(distanceToLight);
+
+			//push new indirect trace payload (MIS)
+			uint index;
+			interlockedAdd( bCounters, RT_COUNTER_INDIRECTRAYS, 1, index );
+			RT_BUFFER0(bIndirectRays,index)  = uint4( asuint(rayOrigin), rayFlags | path.radianceIndex );
+			RT_BUFFER1(bIndirectRays,index)  = indirectRayData1;
+			RT_BUFFER0(bPathState,index)	 = pathState;
+			if( isMedium )
+			{
+				RT_BUFFER1(bPathState,index) = uint4( packVec2x3f(path.mediumExtinction, path.mediumScatter), asuint(path.mediumAnisotropy) );
+			}
+		}
+		else if( any(radianceScattering) )
+		{
+			//push new scattering trace payload (MIS)
+			uint index;
+			interlockedAdd( bCounters, RT_COUNTER_SCATTERINGRAYS, 1, index );
+			RT_BUFFER0(bScatteringRays,index) = uint4( asuint(rayOrigin), rayFlags | path.radianceIndex );
+			RT_BUFFER1(bScatteringRays,index) = uint4( packVec2x3f(rayDirection, radianceScattering), asuint(distanceToLight) );
+		}
+	}
+}
+
+#if defined(MATERIAL_PASS_RT_PRIMARYHIT_RASTER)
+HINT_EARLYDEPTHSTENCIL
+BEGIN_PARAMS
+	INPUT0(vec3,fPosition)
+	INPUT1(vec4,fColor)
+	INPUT2(vec3,fTangent)
+	INPUT3(vec3,fBitangent)
+	INPUT4(vec3,fNormal)
+	INPUT5(vec4,fTexCoord)
+END_PARAMS
+{
+	uint2 outputCoord = uint2( IN_POSITION.xy );
+
+	PathState path;
+#ifdef ShadowCatcher
+	path.radiance			= uint2( 0x0000, 0x0000 ); //{0, 0, 0, 0}, shadow catchers are transparent
+#else
+	path.radiance			= uint2( 0x0000, 0x3C00 ); //{0, 0, 0, 1}
+#endif
+	path.throughput			= vec3( 1.0, 1.0, 1.0 );
+	path.radianceIndex		= outputCoord.y * uRTRadianceStride + outputCoord.x;
+	path.rng				= rngInit( path.radianceIndex, uRandomSeed );
+	path.isTransmission		= false;
+	path.isDiffuse			= false;
+	path.isSubsurface		= false;
+	path.maxGloss			= 1.0;
+	path.mediumExtinction	= vec3( 0.0, 0.0, 0.0 ); //uSceneMediumExtinction;
+	path.mediumScatter		= vec3( 0.0, 0.0, 0.0 ); //uSceneMediumScatter;
+	path.mediumAnisotropy	= 0.0;					 //uSceneMediumAnisotropy;
+
+	vec3 rayEye = uLightSpaceCameraPosition.xyz - uLightSpaceCameraPosition.w*fPosition;
+	float rayDistance = length( rayEye );
+
+	FragmentState state;
+	state.vertexPosition = fPosition;
+	state.vertexEye = rayEye / rayDistance;
+	state.vertexEyeDistance = rayDistance;
+	state.vertexColor = fColor;
+	state.vertexNormal = fNormal;
+	state.vertexTangent = fTangent;
+	state.vertexBitangent = fBitangent;
+	state.vertexTexCoord = fTexCoord.xy;
+	state.vertexTexCoordSecondary = fTexCoord.zw;
+	state.normal = normalize( state.vertexNormal );
+	state.geometricNormal = normalize( cross( ddy(fPosition), ddx(fPosition) ) );
+	state.screenCoord = outputCoord;
+	state.screenTexCoord = IN_POSITION.xy * uScreenTexCoordScale;
+	state.screenDepth = IN_POSITION.z;
+
+	//make sure normal orientation matches geometric normal reconstructed from screen derivatives
+	//this needs to be done for proper handling of back faces ~ms
+	if( dot( state.vertexNormal, state.geometricNormal ) < 0.0 )
+	{
+		state.vertexNormal = -state.vertexNormal;
+		state.normal = -state.normal;
+	}
+
+	evaluate( state, path );
+}
+#endif
+
+#if defined(MATERIAL_PASS_RT_PRIMARYHIT) || \
+	defined(MATERIAL_PASS_RT_SECONDARYHIT)
+COMPUTE(64,1,1)
+{
+	#ifdef RT_SECONDARYHIT
+		//skip secondary hit evaluations entirely for unlit materials
+		//TODO: implement as BLAS flag to skip invoking material shader entirely. ~ms
+		#ifdef Unlit
+			return;
+		#endif
+	#endif
+
+	uint2 numHits = interlockedLoad2( bCounters, RT_COUNTER_INDIRECTHITS );
+	uint id = 64 * numHits.y * DISPATCH_THREAD_ID.y + DISPATCH_THREAD_ID.x;
+	if( id >= numHits.x )
+	{ return; }
+
+	uint objectIndex = bObjectIndices[id];
+	if( objectIndex != uRTObjectIndex )
+	{ return; }
+
+	uint4 hitData0 = RT_BUFFER0(bIndirectHits,id);
+	uint4 hitData1 = RT_BUFFER1(bIndirectHits,id);
+
+	PathState path;
+#ifdef ShadowCatcher
+	path.radiance				= uint2( 0x0000, 0x0000 ); //{0, 0, 0, 0}, shadow catchers are transparent
+#else
+	path.radiance				= uint2( 0x0000, 0x3C00 ); //{0, 0, 0, 1}
+#endif
+	path.throughput				= vec3( 1.0, 1.0, 1.0 );
+	path.radianceIndex			= hitData0.x & RT_INDEX_MASK;
+	path.rng					= rngInit( path.radianceIndex, uRandomSeed );
+	path.isTransmission			= false;
+	path.isDiffuse				= false;
+	path.isSubsurface			= false;
+	path.maxGloss				= 1.0;
+	path.mediumExtinction		= vec3( 0.0, 0.0, 0.0 ); //uSceneMediumExtinction;
+	path.mediumScatter			= vec3( 0.0, 0.0, 0.0 ); //uSceneMediumScatter;
+	path.mediumAnisotropy		= 0.0;					 //uSceneMediumAnisotropy;
+#ifdef TransmissionSubsurfaceDiffusion
+	path.subsurfaceOrigin		= vec3( 0.0, 0.0, 0.0 );
+	path.subsurfaceNormal		= 0;
+	path.subsurfaceRadius		= 0.0;
+	path.subsurfaceHitCountAxis = 0;
+#endif
+	
+	vec3 rayDirection, rayThroughput;
+	unpackVec2x3f( hitData1.xyz, rayDirection, rayThroughput );
+	float rayDistance = asfloat(hitData1.w);
+	
+#ifdef RT_SECONDARYHIT
+	{
+		uint  pathIndex	= hitData0.y;
+		uint4 pathState	= RT_BUFFER0(bInPathState,pathIndex);
+
+		path.radiance		= bRadiance[path.radianceIndex];
+		path.throughput		= abs( asfloat(pathState.xyz) );
+		path.isTransmission	= pathState.x & RT_PATHFLAG_BIT;
+		path.isDiffuse		= pathState.y & RT_PATHFLAG_BIT;
+		path.isSubsurface	= hitData0.x & RT_RAYFLAG_SUBSURFACE;
+		#ifdef ClampPathGloss
+			path.maxGloss	= abs( f16tof32(pathState.w) );
+		#endif
+
+	#ifdef TransmissionSubsurfaceDiffusion
+		HINT_BRANCH
+		if( path.isSubsurface )
+		{
+			//exiting via subsurface diffusion; read additional sampling data from path state
+			uint4 pathSubsurface = RT_BUFFER1(bInPathState,pathIndex);
+			path.subsurfaceOrigin = asfloat(pathSubsurface.xyz);
+			path.subsurfaceNormal = pathSubsurface.w;
+			path.subsurfaceRadius = abs(f16tof32(pathState.w>>16));
+
+			//decode subsurface axis from two fp16 sign bits
+			uint subsurfaceAxis = 0;
+			HINT_FLATTEN
+			if( pathState.w & 0x8000 ) { subsurfaceAxis = 1; }
+			else if( pathState.w & 0x80000000 ) { subsurfaceAxis = 2; }
+
+			//probe ray hit count stored as float in rayDistance
+			path.subsurfaceHitCountAxis = ( uint(rayDistance)<<16 ) | subsurfaceAxis;
+			rayDistance = 0.0;
+		}
+	#endif
+	#if defined(TrackMediumScatter) || defined(TrackMediumExtinction)
+		#ifdef TransmissionSubsurfaceDiffusion
+			else
+		#else
+			HINT_BRANCH
+		#endif
+		if( hitData0.x & RT_RAYFLAG_MEDIUM )
+		{
+			//path is in non-scene medium; read medium data from path state
+			uint4 pathMedium = RT_BUFFER1(bInPathState,pathIndex);
+			unpackVec2x3f( pathMedium.xyz, path.mediumExtinction, path.mediumScatter );
+			path.mediumAnisotropy = asfloat(pathMedium.w);
+		}
+	#endif
+	}
+#endif
+	
+	#ifdef TrackMediumScatter
+		//apply indirect trace ray throughput (may be due to volumetric scattering)
+		path.throughput *= rayThroughput;
+	#endif
+	#ifdef TrackMediumExtinction
+		HINT_FLATTEN
+		if( !path.isSubsurface && !(hitData0.x & RT_RAYFLAG_MEDIUMSCATTER) )
+		{
+			//no volumetric scattering since last hit; apply medium extinction
+			path.throughput *= exp( -path.mediumExtinction * rayDistance );
+		}
+	#endif
+	
+	Vertex input;
+	{
+		uint3 tri = loadTriangle( hitData0.z );
+		Vertex v0 = loadVertex( tri.x );
+		Vertex v1 = loadVertex( tri.y );
+		Vertex v2 = loadVertex( tri.z );
+
+		vec2 triangleCoord = unpackUnitVec2f( hitData0.w );
+		vec3 bary = vec3( 1.0 - triangleCoord.x - triangleCoord.y, triangleCoord.x, triangleCoord.y );
+		#define	INTERPOLATE(attrib) (bary.x*v0.attrib + bary.y*v1.attrib + bary.z*v2.attrib)
+		{
+			input.position  = INTERPOLATE(position);
+			input.normal    = INTERPOLATE(normal);
+			input.tangent   = INTERPOLATE(tangent);
+			input.bitangent = INTERPOLATE(bitangent);
+			input.texcoord  = INTERPOLATE(texcoord);
+			input.texcoord2 = INTERPOLATE(texcoord2);
+			input.color     = INTERPOLATE(color);
+			input.gnormal	= cross( v1.position - v0.position, v2.position - v0.position );
+		}
+		#undef INTERPOLATE
+	}
+	
+	FragmentState state;
+	state.vertexPosition = mulPoint( uModelLightMatrix, input.position ).xyz;
+	state.vertexEye = -rayDirection;
+	state.vertexEyeDistance = rayDistance;
+	state.vertexColor = input.color;
+	//NOTE: vertex tangent basis is being normalized here; this *does not* match raster case
+	//      but otherwise "bad things" (tm) can happen during normal mapping due to vector magnitudes getting too large ~ms
+	state.vertexNormal = normalize( mulVec( uModelInverseTransposeLightMatrix, input.normal ) );
+	state.vertexTangent = normalize( mulVec( uModelInverseTransposeLightMatrix, input.tangent ) );
+	state.vertexBitangent = normalize( mulVec( uModelInverseTransposeLightMatrix, input.bitangent ) );
+	state.vertexTexCoord = input.texcoord * uTexCoordScaleBias.xy + uTexCoordScaleBias.zw;
+	state.vertexTexCoordSecondary = input.texcoord2;
+	state.normal = state.vertexNormal;
+	state.geometricNormal = normalize( mulVec( uModelInverseTransposeLightMatrix, input.gnormal ) );
+	state.screenCoord.x = path.radianceIndex % uRTRadianceStride;
+	state.screenCoord.y = path.radianceIndex / uRTRadianceStride;
+	state.screenTexCoord = vec2( state.screenCoord.x + 0.5, state.screenCoord.y + 0.5) * uScreenTexCoordScale;
+	state.screenDepth = 0.0; //only available in raster pass
+	
+#ifdef RT_PRIMARYHIT
+	//flip normals if camera ray hit back face
+	if( dot( rayDirection, state.geometricNormal ) > 0.0 )
+	{
+		state.vertexNormal = -state.vertexNormal;
+		state.geometricNormal = -state.geometricNormal;
+	}
+#endif
+
+	evaluate( state, path );
+}
+#endif

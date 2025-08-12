@@ -1,0 +1,22 @@
+#include "../common/util.sh"
+#include "../mat/state.vert"
+
+
+USE_INTERLOCKED_BUFFER(rawMeshBuffer, 0);
+USE_BUFFER(uint, bufferTangentsBitangentsNormalsIN);
+
+uniform uint	uNumVertices;
+
+COMPUTE(256,1,1)
+{
+	uint id = DISPATCH_THREAD_ID.x + (DISPATCH_THREAD_ID.y * 65535);
+	if( id < uNumVertices )
+	{
+		uint vertexIndex = id;
+		uint3 tbn;
+		tbn.x = bufferTangentsBitangentsNormalsIN[(vertexIndex*3)+0];
+		tbn.y = bufferTangentsBitangentsNormalsIN[(vertexIndex*3)+1];
+		tbn.z = bufferTangentsBitangentsNormalsIN[(vertexIndex*3)+2];
+		interlockedStore3( rawMeshBuffer, (vertexIndex*8)+3, tbn );
+	}
+}

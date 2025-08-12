@@ -1,0 +1,125 @@
+#include "data/shader/common/octpack.sh"
+#include "data/shader/bake/dither.frag"
+
+USE_BUFFER(vec4,bDirections);
+USE_BUFFER(vec4,bRays);
+USE_RAWBUFFER(bCount);
+USE_ACCELERATION_STRUCTURE(tRootTLAS);
+
+USE_LOADSTORE_BUFFER(vec4,bHits,0);
+
+#include "traceRay.comp"
+
+uniform float	uMinDistance;
+uniform float	uMaxDistance;
+uniform float	uFloorOcclusion;
+uniform uint	uWriteDirection;
+uniform vec2	uCosineScaleBias;
+uniform uint2	uImageSize;
+uniform float	uBlend;
+uniform uint	uRayCount;
+uniform uint	uRayCountTotal;
+uniform uint	uRayIndexStart;
+
+vec3	findPerp( vec3 u )
+{
+	vec3 v;
+	if( abs(u.y) < 0.999 )
+	{ v = vec3(-u.z, 0, u.x); }
+	else
+	{ v = vec3(0, u.z, -u.y); }
+	return v;
+}
+
+COMPUTE(64,1,1)
+{
+	uint4 indexLoad = rawLoad4(bCount,0);
+	uint index = (64*indexLoad.y)*DISPATCH_THREAD_ID.y + DISPATCH_THREAD_ID.x;
+	if( index >= indexLoad.x )
+	{ return; }
+
+	//load ray data
+	vec4 rayLoad = bRays[index];
+
+	RayDesc ray;
+	ray.Origin = rayLoad.xyz;
+	ray.TMin   = uMinDistance;
+	ray.TMax   = uMaxDistance;
+
+	//compute basis vectors
+	vec3 basisY = unpackUnitVectorOct( asuint(rayLoad.w) );
+	vec3 basisX = normalize( findPerp( basisY ) );
+	vec3 basisZ = cross( basisX, basisY );
+
+	//offset direction table index
+	uint indexBase = uRayIndexStart;
+	{
+		uint3 r = asuint(rayLoad.xyz);
+		uint gangIndex = (r.x & 3) | ((r.y & 3) << 2) | ((r.z & 3) << 4);
+		indexBase += gangIndex * uRayCountTotal;
+	}
+	uint indexEnd = indexBase + uRayCount;
+
+	//sample hemisphere
+	vec3 avgDirection = vec3( 0.0, 0.0, 0.0 );
+	float avgDist = -1.0;
+	float ao = 0.0, wtotal = 0.0; float distWTotal = 0.0;
+	for( uint i=indexBase; i<indexEnd; i++ )
+	{
+		vec3 dir = bDirections[i].xyz;
+
+		//jitter the ray
+		dir += 0.05 * rand3( 100.0*(ray.Origin.xy + ray.Origin.zz) + vec2(i,i) );
+		dir.y = abs(dir.y);
+		dir = normalize(dir);
+
+		float w = saturate( uCosineScaleBias.x * dir.y + uCosineScaleBias.y );
+		dir = dir.x * basisX + dir.y * basisY + dir.z * basisZ;
+
+		RayQueryType q;
+		RayPayload payload;
+		ray.Direction = dir;
+		q.TraceRayInline( tRootTLAS, 0, RT_RAYTYPE_BAKE, ray );
+		if( traceRay( q, payload ) )
+		{
+			ao += w;
+			if( wtotal > 0.f )
+			{ avgDist += q.CommittedRayT() * w; }
+			else
+			{ avgDist = q.CommittedRayT() * w; }
+			wtotal += w;
+			distWTotal += w;
+		}
+		else
+		{
+			avgDirection += dir * w;
+
+			HINT_FLATTEN
+			if( dir.y < 0.0 )
+			{ ao += uFloorOcclusion * w; }
+			wtotal += w;
+		}
+	}
+
+	//compute final averages
+	if( wtotal > 0.0 )
+	{
+		ao = 1.0 - ao * rcp( wtotal );
+		avgDist *= rcp( distWTotal );
+	}
+	else
+	{
+		ao = 1.0;
+	}
+
+	//write result
+	vec4 result = vec4( ao, avgDist, 0.0, 1.0e6 );
+	if( uWriteDirection )
+	{ result.xyz = avgDirection; }
+	HINT_BRANCH if( uBlend < 1.0 )
+	{
+		vec4 dst = bHits[index];
+		result = mix( dst, result, uBlend );
+	}
+	bHits[index] = result;
+}

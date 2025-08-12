@@ -1,0 +1,57 @@
+#include "data/shader/scene/raytracing/buffers.comp"
+
+#define RT_TRACE_TERMINATE_ON_FIRST_HIT
+#define RT_TRACE_MATCH_FLAGS BVHMESH_FLAG_SHADOW_CASTER
+#include "bvhtrace.comp"
+
+USE_RAWBUFFER(bCounters);
+USE_BUFFER(uint4,bDirectRays);
+
+USE_LOADSTORE_BUFFER(uint2,bRadiance,0);
+
+uniform uint uNoiseSeed;
+uniform uint uRTCounterOffset;
+
+COMPUTE(64,1,1)
+{
+    uint2 numRays = rawLoad2( bCounters, uRTCounterOffset );
+	uint id = 64 * numRays.y * DISPATCH_THREAD_ID.y + DISPATCH_THREAD_ID.x;
+    if( id >= numRays.x )
+    { return; }
+
+    uint4 rayData0 = RT_BUFFER0(bDirectRays,id);
+    uint4 rayData1 = RT_BUFFER1(bDirectRays,id);
+
+    vec3 rayOrigin = asfloat(rayData0.xyz);
+    vec3 rayDirection, rayRadiance;
+    unpackVec2x3f( rayData1.xyz, rayDirection, rayRadiance );
+    float rayMaxT = asfloat(rayData1.w);
+
+    uint radianceIndex   = rayData0.w & RT_INDEX_MASK;
+	bool isShadowCatcher = rayData0.w & RT_RAYFLAG_SHADOWCATCHER;
+	bool isOccluded      = false;
+	HINT_BRANCH
+	if( rayMaxT > 0.0 )
+	{
+	    RayHit hit;
+		#ifdef RT_TRACE_TRANSPARENCY_DITHER
+			hit.rng = rngInit( radianceIndex, uNoiseSeed );
+		#endif
+    	Ray ray = buildRay( rayOrigin, rayDirection );
+		isOccluded = traceRay( GROUP_INDEX, ray, rayMaxT, hit );
+	}	
+	if( isShadowCatcher )
+	{
+		//shadow catcher: modulate by shadow color if occluded
+		float shadowAlpha = rayRadiance.r;
+		float shadowOpacity = saturate( 1.0 - shadowAlpha );
+		if( isOccluded )
+		{ mulPackedVec4fSetW( bRadiance[radianceIndex], shadowOpacity, shadowAlpha ); }
+	}
+	else
+	{
+		//accumulate radiance if unoccluded
+		if( !isOccluded )
+		{ addPackedVec4f( bRadiance[radianceIndex], rayRadiance ); }
+	}
+}

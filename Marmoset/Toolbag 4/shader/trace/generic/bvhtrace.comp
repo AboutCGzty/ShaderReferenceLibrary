@@ -1,0 +1,19 @@
+#ifndef RT_TRACE_GROUP_SIZE
+#define RT_TRACE_GROUP_SIZE 64
+#endif
+
+//#define RT_TRACE_CULL_BACKFACES
+
+#ifdef RT_TRACE_TERMINATE_ON_FIRST_HIT
+#	define BVH_RESULT		bool
+#	define BVH_RETURN_HIT	return true
+#	define BVH_RETURN_MISS	return false
+#	define BVH_TCALL(func)	if( func ) { return true; }
+#else
+#	define BVH_RESULT		void
+#	define BVH_RETURN_HIT	return
+#	define BVH_RETURN_MISS	return
+#	define BVH_TCALL(func)	func
+#endif
+
+#include "bvhtrace2.comp"

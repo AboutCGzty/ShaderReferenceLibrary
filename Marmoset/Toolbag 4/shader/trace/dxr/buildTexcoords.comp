@@ -1,0 +1,57 @@
+#include "common.comp"
+
+USE_RAWBUFFER(bMeshVertices);
+USE_RAWBUFFER(bMeshIndices);
+uniform uint uMeshIndices16bit;
+
+uniform uint uTriangleCount;
+uniform uint uTriangleOffset;
+uniform uint uTexCoordOffset;
+uniform uint uDispatchSizeX;
+
+USE_LOADSTORE_BUFFER(DXRPackedTexCoords,bOutTexCoords,0);
+
+uint3	loadTriangle( uint index )
+{
+	index += index + index;
+	if( uMeshIndices16bit )
+	{
+		//16-bit load
+		uint r = index & 1;
+		index >>= 1;
+		uint2 words = rawLoad2( bMeshIndices, index );
+		return	r > 0 ?
+				uint3( words.x >> 16, words.y & 0xFFFF, words.y >> 16 ) :
+				uint3( words.x & 0xFFFF, words.x >> 16, words.y & 0xFFFF );
+	}
+	else
+	{
+		//32-bit load
+		return rawLoad3( bMeshIndices, index );
+	}
+}
+
+vec2	loadTexcoord( uint index )
+{
+	uint vindex = index << 3;
+	uint2 data  = rawLoad2( bMeshVertices, vindex+6 );
+	return asfloat( data );
+}
+
+COMPUTE(64,1,1)
+{
+	uint id = 64 * uDispatchSizeX * DISPATCH_THREAD_ID.y + DISPATCH_THREAD_ID.x;
+	if( id >= uTriangleCount )
+	{ return; }
+
+	uint triangleIndex = uTriangleOffset + id;
+	uint3 tri = loadTriangle( triangleIndex );
+	vec2 t0 = loadTexcoord( tri.x );
+	vec2 t1 = loadTexcoord( tri.y );
+	vec2 t2 = loadTexcoord( tri.z );
+	
+	uint texCoordIndex = uTexCoordOffset + id;
+	bOutTexCoords[texCoordIndex].t0 = f32tof16(t0.x) | (f32tof16(t0.y)<<16);
+	bOutTexCoords[texCoordIndex].t1 = f32tof16(t1.x) | (f32tof16(t1.y)<<16);
+	bOutTexCoords[texCoordIndex].t2 = f32tof16(t2.x) | (f32tof16(t2.y)<<16);
+}

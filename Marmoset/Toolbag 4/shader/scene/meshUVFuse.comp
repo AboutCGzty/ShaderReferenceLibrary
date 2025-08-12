@@ -1,0 +1,47 @@
+#include "../common/util.sh"
+#include "../mat/state.vert"
+
+
+USE_INTERLOCKED_BUFFER(rawMeshBuffer, 0);
+USE_BUFFER(uint, duplicateVertexMapIN);
+USE_BUFFER(uint, duplicateVertexListIN);
+
+uniform uint	uNumPositions;
+uniform uint	uTotalVertices;
+
+vec3 getSrcVertex(uint id)
+{
+	vec3 v = asfloat(interlockedLoad3(rawMeshBuffer, id*8));
+	return v;
+}
+
+void writePosition(uint vertexIndex, vec3 pos)
+{
+	interlockedStore3( rawMeshBuffer, vertexIndex*8, asuint(pos) );
+}
+
+COMPUTE(256,1,1)
+{
+	uint id = DISPATCH_THREAD_ID.x + (DISPATCH_THREAD_ID.y * 65535);
+	if( id < uNumPositions )
+	{
+		uint vertexIndex = duplicateVertexListIN[id];
+		uint numTableEntries = duplicateVertexMapIN[(vertexIndex*2)+0];
+		if( numTableEntries > 1 )
+		{
+			uint tableStartIndex = duplicateVertexMapIN[(vertexIndex*2)+1]+(uTotalVertices*2);
+			vec3 avgPos = vec3( 0.0, 0.0, 0.0 );
+			for( uint i=0; i<numTableEntries; i++ )
+			{
+				uint vertexIndex = duplicateVertexMapIN[tableStartIndex + i];
+				avgPos += getSrcVertex(vertexIndex);
+			}
+			avgPos /= numTableEntries;
+			for( uint j=0; j<numTableEntries; j++ )
+			{
+				uint vertexIndex = duplicateVertexMapIN[tableStartIndex + j];
+				writePosition(vertexIndex, avgPos);
+			}
+		}
+	}
+}

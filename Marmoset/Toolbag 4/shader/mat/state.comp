@@ -1,0 +1,65 @@
+#ifndef MSET_COMP_STATE_H
+#define MSET_COMP_STATE_H
+
+#include "data/shader/common/tangentbasis.sh"
+#include "data/shader/common/rng.comp"
+
+struct SampleState
+{
+	//input
+	vec4            r;
+	float			raux;
+	vec3			origin;
+	TangentBasis    basis;
+	vec3            V, Ng;
+	float			NdotV;
+	//sampling weights
+	float           reflectionWeight;
+	float			reflectionWeightSecondary;
+	float           diffusionWeight;
+	float			transmissionWeight;
+	//state
+	float           NdotL;
+	bool			flagDiffuse;
+	bool			flagSubsurface;
+	float			shadow;
+	//fresnel throughput
+	vec3			Tin, Tout;
+	//output
+	vec3            L, H;
+	vec3            bsdf;
+	float           pdf;
+};
+
+struct LightSampleState
+{
+	vec3			L;
+	vec3			radiance;
+	float			distance;
+	float			shadow;
+	float			pdf;
+	float			pdfChoose;
+};
+#define LS_INDEX_SKY	(-1)
+#define LS_INDEX_RANDOM	(-2)
+
+struct PathState
+{
+	uint2			radiance;
+	vec3			throughput;
+	uint			radianceIndex;
+	RNG				rng;
+	bool			isTransmission;
+	bool			isDiffuse;
+	bool			isSubsurface;
+	float			maxGloss;
+	vec3			mediumExtinction;
+	vec3			mediumScatter;
+	float			mediumAnisotropy;
+	vec3			subsurfaceOrigin;
+	uint			subsurfaceNormal;
+	float			subsurfaceRadius;
+	uint			subsurfaceHitCountAxis;
+};
+
+#endif

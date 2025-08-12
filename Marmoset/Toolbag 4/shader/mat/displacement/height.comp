@@ -1,0 +1,19 @@
+#include "../../common/util.sh"
+#include "../state.vert"
+
+
+USE_TEXTURE2D(tDisplacementHeightMap);
+
+uniform vec2	uDisplacementScaleBias;
+uniform vec4	uDisplacementSwizzle;
+
+
+vec3 DisplacementHeight(VertexState s)
+{
+	float displacement = dot( texture2DLod( tDisplacementHeightMap, s.texCoord.xy, 0.0 ), uDisplacementSwizzle );
+	displacement = displacement*uDisplacementScaleBias.x + uDisplacementScaleBias.y;
+	vec3 result = s.position + (s.normal*displacement);
+	return result;
+}
+
+#define	Displacement	DisplacementHeight

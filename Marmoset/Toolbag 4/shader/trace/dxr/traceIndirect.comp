@@ -1,0 +1,71 @@
+#include "data/shader/scene/raytracing/buffers.comp"
+#include "data/shader/common/const.sh"
+
+USE_BUFFER(uint4,bIndirectRays);
+USE_ACCELERATION_STRUCTURE(tRootTLAS);
+
+USE_INTERLOCKED_BUFFER(bCounters,0);
+USE_LOADSTORE_OBJECTINDEXBUFFER(bObjectIndices,1);
+USE_LOADSTORE_BUFFER(uint4,bIndirectHits,2);
+USE_LOADSTORE_BUFFER(uint2,bRadiance,3);
+
+uniform uint uNoiseSeed;
+
+#include "traceRay.comp"
+
+COMPUTE(64,1,1)
+{
+	uint2 numRays = interlockedLoad2( bCounters, RT_COUNTER_INDIRECTRAYS );
+	uint id = 64 * numRays.y * DISPATCH_THREAD_ID.y + DISPATCH_THREAD_ID.x;
+	if( id >= numRays.x )
+	{ return; }
+	
+	uint4 rayData0 = RT_BUFFER0(bIndirectRays,id);
+	uint4 rayData1 = RT_BUFFER1(bIndirectRays,id);
+
+	RayDesc ray;
+	vec3 rayRadiance;
+	unpackVec2x3f( rayData1.xyz, ray.Direction, rayRadiance );
+	ray.Origin = asfloat(rayData0.xyz);
+	ray.TMin   = 0.0;
+	ray.TMax   = INFINITY;
+		
+	bool isShadowCatcher = rayData0.w & RT_RAYFLAG_SHADOWCATCHER;
+	bool isOccluded      = false;
+	
+	RayQueryType q;
+	RayPayload payload;
+	#if defined(FeatureTransparencyDither)
+		payload.rng = rngInit( rayData0.w & RT_INDEX_MASK, uNoiseSeed );
+	#endif
+	q.TraceRayInline( tRootTLAS, 0, RT_RAYTYPE_SECONDARY, ray );
+	isOccluded = traceRay( q, payload );
+	if( isOccluded )
+	{
+		uint index;
+		interlockedAdd( bCounters, RT_COUNTER_INDIRECTHITS, 1, index );
+		bObjectIndices[index] = q.CommittedInstanceID() + q.CommittedGeometryIndex();
+		RT_BUFFER0(bIndirectHits,index) = uint4( 
+			rayData0.w, //radianceIndex, flags
+			id, //pathIndex
+			q.CommittedPrimitiveIndex(),
+			packUnitVec2f( q.CommittedTriangleBarycentrics() ) );
+		RT_BUFFER1(bIndirectHits,index) = uint4(
+			packVec2x3f( ray.Direction, vec3(1.0,1.0,1.0) ),
+			asuint( q.CommittedRayT() ) );
+	}
+
+	uint radianceIndex = rayData0.w & RT_INDEX_MASK;
+	if( isShadowCatcher )
+	{
+		//shadow catcher: modulate by shadow opacity if occluded
+		if( isOccluded )
+		{ mulPackedVec4fSetW( bRadiance[radianceIndex], 0.0, 1.0 ); }
+	}
+	else
+	{
+		float misLightDistance = asfloat(rayData1.w);
+		if( misLightDistance <= q.CommittedRayT() )
+		{ addPackedVec4f( bRadiance[radianceIndex], rayRadiance ); }
+	}
+}

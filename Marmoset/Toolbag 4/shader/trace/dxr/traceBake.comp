@@ -1,0 +1,41 @@
+#include "data/shader/common/const.sh"
+#include "data/shader/common/octpack.sh"
+
+USE_BUFFER(vec4,bRays);
+USE_RAWBUFFER(bCount);
+USE_ACCELERATION_STRUCTURE(tRootTLAS);
+
+USE_LOADSTORE_BUFFER(vec4,bHits,0);
+
+#include "traceRay.comp"
+
+COMPUTE(64,1,1)
+{
+	uint4 indexLoad = rawLoad4(bCount,0);
+	uint index = (64*indexLoad.y)*DISPATCH_THREAD_ID.y + DISPATCH_THREAD_ID.x;
+	if( index >= indexLoad.x )
+	{ return; }
+
+	vec4 rayLoad = bRays[index];
+
+	RayDesc ray;
+	ray.Origin = rayLoad.xyz;
+	ray.Direction = unpackUnitVectorOct( asuint(rayLoad.w) );
+	ray.TMin = 0.0;
+	ray.TMax = INFINITY;
+
+	vec4 writeOut = vec4( asfloat(0xFFFFFFFF), 0.0, 0.0, 0.0 );
+
+	RayQueryType q;
+	RayPayload payload;
+	q.TraceRayInline( tRootTLAS, 0, RT_RAYTYPE_BAKE, ray );
+	if( traceRay( q, payload ) )
+	{
+		uint objectIndex = q.CommittedInstanceID() + q.CommittedGeometryIndex();
+		uint triangleIndex = q.CommittedPrimitiveIndex();
+		writeOut.x = asfloat( objectIndex );
+		writeOut.y = asfloat( triangleIndex );
+		writeOut.zw = q.CommittedTriangleBarycentrics();
+	}
+	bHits[index] = writeOut;
+}

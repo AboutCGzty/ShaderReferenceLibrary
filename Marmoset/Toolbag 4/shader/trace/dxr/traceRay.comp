@@ -1,0 +1,120 @@
+#include "common.comp"
+#include "../../common/rng.comp"
+
+USE_BUFFER(DXRInstanceData,bDXRInstanceData);
+USE_GLOBAL_BUFFER(DXRPackedTexCoords,bDXRTexCoordBuffers,2);
+
+#if defined(FeatureTransparency)
+	USE_TEXTURE2DARRAY(tTransparencyAtlas);
+	#define TRANSPARENCY_SUBROUTINE_NONE	0x00
+	#define TRANSPARENCY_SUBROUTINE_CUTOUT	0x01
+	#define TRANSPARENCY_SUBROUTINE_DITHER	0x02
+#endif
+
+typedef RayQuery <
+#if defined(RayFlags)
+	RayFlags |
+#endif
+#if !defined(FeatureTransparency) && !defined(FeatureObjectFilter)
+	RAY_FLAG_CULL_NON_OPAQUE |
+#endif
+#if defined(FeatureCullBackFaces)
+	RAY_FLAG_CULL_BACK_FACING_TRIANGLES |
+#endif
+	RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES > 
+	RayQueryType;
+
+struct RayPayload
+{
+#if defined(FeatureTransparencyDither)
+	RNG rng;
+#endif
+#if defined(FeatureObjectFilter)
+	uint objectIndex;
+#endif
+#if defined(FeatureSubsurfaceDiffusion)
+	uint hitIndices;
+#endif
+};
+
+bool traceRay( inout RayQueryType q, inout RayPayload payload )
+{
+#ifdef CPR_VENDOR_AMD
+	//AMD bug workaround
+	for( uint i=0; i<0xFFFFFFFF; ++i )
+	{
+		if( !q.Proceed() )
+		{
+			break;
+		}
+#else
+	while( q.Proceed() )
+	{
+#endif
+		uint objectIndex = q.CandidateInstanceID() + q.CandidateGeometryIndex();
+	#if defined(FeatureObjectFilter)
+		if( payload.objectIndex != ~uint(0) && objectIndex != payload.objectIndex )
+		{
+			continue;
+		}
+	#endif
+	#if defined(FeatureTransparency)
+		DXRInstanceData instance = bDXRInstanceData[objectIndex];
+		if( instance.transparency_texcoordBuffer > 0x3FFFFFFF )
+		{
+			uint transparencyIndex   = instance.transparency_texcoordBuffer >> 20;
+			uint texcoordBufferIndex = instance.transparency_texcoordBuffer & 0xFFFFF;
+
+			uint triangleIndex = q.CandidatePrimitiveIndex() + instance.triangleOffset;
+			vec2 triangleCoord = q.CandidateTriangleBarycentrics();
+
+			DXRPackedTexCoords ptc = bDXRTexCoordBuffers[NonUniformResourceIndex(texcoordBufferIndex)][triangleIndex];
+			vec2 tc = 
+				  vec2( f16tof32(ptc.t0), f16tof32(ptc.t0>>16) ) * (1.0 - triangleCoord.x - triangleCoord.y)
+				+ vec2( f16tof32(ptc.t1), f16tof32(ptc.t1>>16) ) * triangleCoord.x
+				+ vec2( f16tof32(ptc.t2), f16tof32(ptc.t2>>16) ) * triangleCoord.y;
+			float alpha = texture2DArrayLod( tTransparencyAtlas, vec3( tc.x, tc.y, transparencyIndex & 0x3FF ), 0.0 ).r;
+
+			uint subroutineIndex = transparencyIndex >> 10;
+		#if defined(FeatureTransparencyCutout)
+			if( subroutineIndex == TRANSPARENCY_SUBROUTINE_CUTOUT )
+			{
+				if( alpha <= 0.49 )
+				{
+					continue;
+				}
+			}
+		#endif
+		#if defined(FeatureTransparencyDither)
+			if( subroutineIndex == TRANSPARENCY_SUBROUTINE_DITHER )
+			{
+				float noise = rngNextFloat( payload.rng );
+				if( alpha < noise )
+				{
+					continue;
+				}
+			}
+		#endif
+		}
+	#endif
+	#if defined(FeatureSubsurfaceDiffusion)
+		if( payload.hitIndices != ~uint(0) )
+		{
+			uint currentHitIndex  = payload.hitIndices & 0xFFFF;
+			uint selectedHitIndex = payload.hitIndices >> 16;
+			if( currentHitIndex == selectedHitIndex )
+			{
+				q.Abort();
+			}
+			else
+			{
+				payload.hitIndices++; //increment currentHitIndex
+				continue;
+			}
+		}
+	#endif
+		q.CommitNonOpaqueTriangleHit();
+	}
+
+	return q.CommittedStatus() == COMMITTED_TRIANGLE_HIT;
+}
